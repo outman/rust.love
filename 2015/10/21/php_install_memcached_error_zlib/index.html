@@ -3,17 +3,36 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Archives: 2015/10 | Rust.Love</title>
+  <title>php 安装 memcached 扩展出现 zlib 错误 | Rust.Love</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Rust.Love">
-<meta property="og:url" content="http://rust.love/archives/2015/10/index.html">
+  <meta name="description" content="在 Mac OS X 10.11 中通过 
+1brew install php55-memcached
+的时候出现
+1configure: error: memcached support requires ZLIB
+却少 ZLIB 相关库，解决办法就是通过 Xcode 来安装
+1xcode-select --install
+后再次通过 brew 来安装。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="php 安装 memcached 扩展出现 zlib 错误">
+<meta property="og:url" content="http://rust.love/2015/10/21/php_install_memcached_error_zlib/index.html">
 <meta property="og:site_name" content="Rust.Love">
-<meta property="og:description">
+<meta property="og:description" content="在 Mac OS X 10.11 中通过 
+1brew install php55-memcached
+的时候出现
+1configure: error: memcached support requires ZLIB
+却少 ZLIB 相关库，解决办法就是通过 Xcode 来安装
+1xcode-select --install
+后再次通过 brew 来安装。">
+<meta property="og:updated_time" content="2015-10-21T05:24:50.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Rust.Love">
-<meta name="twitter:description">
+<meta name="twitter:title" content="php 安装 memcached 扩展出现 zlib 错误">
+<meta name="twitter:description" content="在 Mac OS X 10.11 中通过 
+1brew install php55-memcached
+的时候出现
+1configure: error: memcached support requires ZLIB
+却少 ZLIB 相关库，解决办法就是通过 Xcode 来安装
+1xcode-select --install
+后再次通过 brew 来安装。">
 <meta name="twitter:creator" content="@pochonlee">
 <link rel="publisher" href="pochonlee">
   
@@ -66,77 +85,59 @@
   </div>
 </header>
       <div class="outer">
-        <section id="main">
-  
-  
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2015" class="archive-year">2015</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/10/21/php_install_memcached_error_zlib/" class="archive-article-date">
-  <time datetime="2015-10-21T05:24:50.000Z" itemprop="datePublished">Oct 21</time>
+        <section id="main"><article id="post-php_install_memcached_error_zlib" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/10/21/php_install_memcached_error_zlib/" class="article-date">
+  <time datetime="2015-10-21T05:24:50.000Z" itemprop="datePublished">2015-10-21</time>
 </a>
-      
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/10/21/php_install_memcached_error_zlib/">php 安装 memcached 扩展出现 zlib 错误</a>
+    <h1 class="article-title" itemprop="name">
+      php 安装 memcached 扩展出现 zlib 错误
     </h1>
   
 
-    </header>
-  </div>
-</article>
-  
+      </header>
     
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/10/16/php_anonymous_function_params/" class="archive-article-date">
-  <time datetime="2015-10-16T01:13:19.000Z" itemprop="datePublished">Oct 16</time>
-</a>
+    <div class="article-entry" itemprop="articleBody">
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/10/16/php_anonymous_function_params/">php 中函数作为参数传递的几种形式</a>
-    </h1>
-  
+        <p>在 Mac OS X 10.11 中通过 </p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">brew </span>install php55-memcached</span><br></pre></td></tr></table></figure>
+<p>的时候出现</p>
+<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">configure:</span> <span class="string">error:</span> memcached support requires ZLIB</span><br></pre></td></tr></table></figure>
+<p>却少 ZLIB 相关库，解决办法就是通过 Xcode 来安装</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">xcode-<span class="built_in">select</span> <span class="comment">--install</span></span><br></pre></td></tr></table></figure>
+<p>后再次通过 brew 来安装。</p>
 
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2015/10/14/hello-world/" class="archive-article-date">
-  <time datetime="2015-10-14T09:20:48.000Z" itemprop="datePublished">Oct 14</time>
-</a>
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2015/10/14/hello-world/">Hello World</a>
-    </h1>
-  
-
-    </header>
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://rust.love/2015/10/21/php_install_memcached_error_zlib/" data-id="cig0cvkel0000etup6u5we685" class="article-share-link">Share</a>
+      
+      
+    </footer>
   </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2015/10/16/php_anonymous_function_params/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">php 中函数作为参数传递的几种形式</div>
+    </a>
+  
+</nav>
+
+  
 </article>
-  
-  
-    </div></section>
-  
+
 </section>
         
           <aside id="sidebar">
