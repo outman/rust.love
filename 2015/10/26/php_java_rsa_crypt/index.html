@@ -3,17 +3,18 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Rust.Love</title>
+  <title>php 和 java RSA 对称加密互通的问题 | Rust.Love</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Rust.Love">
-<meta property="og:url" content="http://rust.love/index.html">
+  <meta name="description" content="java 和 php 在处理 RSA 加密的时候是有差别的，java 处理的 public/private key 文件在 php 里面是没有办法处理的，需要进行格式转换，而通过 openssl 直接生成的 public/private key 文件在 java 里面是不能直接实用的，所以如果双方互通就涉及到格式转换的问题。而往往因为不用业务之间需要这种语言上的加密转换，如果不知道这种差异，总是无">
+<meta property="og:type" content="article">
+<meta property="og:title" content="php 和 java RSA 对称加密互通的问题">
+<meta property="og:url" content="http://rust.love/2015/10/26/php_java_rsa_crypt/index.html">
 <meta property="og:site_name" content="Rust.Love">
-<meta property="og:description">
+<meta property="og:description" content="java 和 php 在处理 RSA 加密的时候是有差别的，java 处理的 public/private key 文件在 php 里面是没有办法处理的，需要进行格式转换，而通过 openssl 直接生成的 public/private key 文件在 java 里面是不能直接实用的，所以如果双方互通就涉及到格式转换的问题。而往往因为不用业务之间需要这种语言上的加密转换，如果不知道这种差异，总是无">
+<meta property="og:updated_time" content="2015-10-26T04:36:32.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Rust.Love">
-<meta name="twitter:description">
+<meta name="twitter:title" content="php 和 java RSA 对称加密互通的问题">
+<meta name="twitter:description" content="java 和 php 在处理 RSA 加密的时候是有差别的，java 处理的 public/private key 文件在 php 里面是没有办法处理的，需要进行格式转换，而通过 openssl 直接生成的 public/private key 文件在 java 里面是不能直接实用的，所以如果双方互通就涉及到格式转换的问题。而往往因为不用业务之间需要这种语言上的加密转换，如果不知道这种差异，总是无">
 <meta name="twitter:creator" content="@pochonlee">
 <link rel="publisher" href="pochonlee">
   
@@ -66,9 +67,7 @@
   </div>
 </header>
       <div class="outer">
-        <section id="main">
-  
-    <article id="post-php_java_rsa_crypt" class="article article-type-post" itemscope itemprop="blogPost">
+        <section id="main"><article id="post-php_java_rsa_crypt" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/10/26/php_java_rsa_crypt/" class="article-date">
   <time datetime="2015-10-26T04:36:32.000Z" itemprop="datePublished">2015-10-26</time>
@@ -81,8 +80,8 @@
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/10/26/php_java_rsa_crypt/">php 和 java RSA 对称加密互通的问题</a>
+    <h1 class="article-title" itemprop="name">
+      php 和 java RSA 对称加密互通的问题
     </h1>
   
 
@@ -108,182 +107,20 @@
     </footer>
   </div>
   
-</article>
-
-
+    
+<nav id="article-nav">
   
-    <article id="post-my_tools" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/10/22/my_tools/" class="article-date">
-  <time datetime="2015-10-22T04:15:44.000Z" itemprop="datePublished">2015-10-22</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/10/22/my_tools/">我的工具包</a>
-    </h1>
+    <a href="/2015/10/22/my_tools/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">我的工具包</div>
+    </a>
   
+</nav>
 
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>每当被叫去帮别人解决问题的时候，看着他那未设置过的字体、未配置过的配色主题再加上系统自带那些别扭的工具，我就有种先帮他搞定开发环境和工具的冲动。</p>
-<p>简单说说我使用的软件和各种小工具吧</p>
-<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="label">vim</span></span><br><span class="line"><span class="keyword">item2</span><br><span class="line"></span><span class="label">oh</span> my shell</span><br><span class="line"><span class="label">tmux</span></span><br><span class="line"><span class="label">git</span></span><br><span class="line"><span class="keyword">brew</span><br><span class="line"></span><span class="label">proxychains</span>-ng</span><br><span class="line"><span class="label">Dash</span></span><br><span class="line"><span class="label">Sequel</span> Pro</span><br></pre></td></tr></table></figure>
-<p>因为大部分是脚本语言开发，所以以上这些基本就都能满足日常需求了，vim 集成了各种插件，能达到一般 IDE 的级别了。<br>item2 则更多的时候是为了方便粘贴复制分屏等功能，因为 tmux 已经具备了分屏功能，所以 item2 的分屏我还不怎么使用。<br>oh my shell 功能非常强大。<br>tmux 就更不用说了，使用 screen 的可以考虑切换到 tmux。<br>git 版本管理利器。<br>brew Mac 下管理各种软件安装包的利器。<br>proxychains-ng 为了命令行下方便的使用一些代理，你懂的。<br>Dash 各种帮助文档的集合。<br>Sequel Pro MySql GUI 客户端管理工具。</p>
-<p>而像 vim item2 tmux 这些可以设置配色主题的我基本都采用了 Solarized Dark 主题。<br>vim 的各种插件和配置来自 <a href="https://github.com/amix/vimrc" target="_blank" rel="external">https://github.com/amix/vimrc</a></p>
-<p>ssh 链接服务器相关的主要是写了一些 expect 脚本。</p>
-<p>–EOF;</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://rust.love/2015/10/22/my_tools/" data-id="cig1psnf10000ciupqp00ce43" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
   
 </article>
 
-
-  
-    <article id="post-php_install_memcached_error_zlib" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/10/21/php_install_memcached_error_zlib/" class="article-date">
-  <time datetime="2015-10-21T05:24:50.000Z" itemprop="datePublished">2015-10-21</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/10/21/php_install_memcached_error_zlib/">php 安装 memcached 扩展出现 zlib 错误</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>在 Mac OS X 10.11 中通过 </p>
-<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">brew </span>install php55-memcached</span><br></pre></td></tr></table></figure>
-<p>的时候出现</p>
-<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">configure:</span> <span class="string">error:</span> memcached support requires ZLIB</span><br></pre></td></tr></table></figure>
-<p>却少 ZLIB 相关库，解决办法就是通过 Xcode 来安装</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">xcode-<span class="built_in">select</span> <span class="comment">--install</span></span><br></pre></td></tr></table></figure>
-<p>后再次通过 brew 来安装。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://rust.love/2015/10/21/php_install_memcached_error_zlib/" data-id="cig0cvkel0000etup6u5we685" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-php_anonymous_function_params" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/10/16/php_anonymous_function_params/" class="article-date">
-  <time datetime="2015-10-16T01:13:19.000Z" itemprop="datePublished">2015-10-16</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/10/16/php_anonymous_function_params/">php 中函数作为参数传递的几种形式</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>匿名函数（Anonymous functions），也叫闭包函数（closures），允许 临时创建一个没有指定名称的函数。最经常用作回调函数（callback）参数的值。当然，也有其它应用的情况。</p>
-<figure class="highlight xquery"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php </span><br><span class="line"></span><br><span class="line">class PHPClass &#123;</span><br><span class="line">    </span><br><span class="line">    public function executeMethod() &#123;</span><br><span class="line">        echo __METHOD_<span class="number">_</span> . <span class="string">'()'</span> . PHP_EOL;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> functionParams() &#123;</span><br><span class="line">    echo __FUNCTION_<span class="number">_</span> . <span class="string">'()'</span> . PHP_EOL;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> functionWithFuncParams(<span class="variable">$function</span>) &#123;</span><br><span class="line">    <span class="variable">$function</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$anonymousFunction</span> = <span class="keyword">function</span>() &#123;</span><br><span class="line">    echo <span class="string">'this is anonymous function'</span> . PHP_EOL;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="variable">$phpClass</span> = new PHPClass();</span><br><span class="line"></span><br><span class="line">functionWithFuncParams([<span class="variable">$phpClass</span>, <span class="string">'executeMethod'</span>]);</span><br><span class="line">functionWithFuncParams(<span class="string">'functionParams'</span>);</span><br><span class="line">functionWithFuncParams(<span class="variable">$anonymousFunction</span>);</span><br></pre></td></tr></table></figure>
-<p>结果</p>
-<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">PHPClass::<span class="function"><span class="title">executeMethod</span><span class="params">()</span></span></span><br><span class="line"><span class="function"><span class="title">functionParams</span><span class="params">()</span></span></span><br><span class="line">this is anonymous function</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://rust.love/2015/10/16/php_anonymous_function_params/" data-id="cifsyc2eh0000piuphmhb2uwq" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-hello-world" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/10/14/hello-world/" class="article-date">
-  <time datetime="2015-10-14T09:20:48.000Z" itemprop="datePublished">2015-10-14</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/10/14/hello-world/">Hello World</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a href="http://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p>
-<h2 id="Quick_Start">Quick Start</h2><h3 id="Create_a_new_post">Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p>
-<h3 id="Run_server">Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p>
-<h3 id="Generate_static_files">Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p>
-<h3 id="Deploy_to_remote_sites">Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://rust.love/2015/10/14/hello-world/" data-id="cifqlgaza0000nbupwt2p2qfs" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-  
 </section>
         
           <aside id="sidebar">
