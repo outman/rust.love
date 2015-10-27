@@ -68,6 +68,47 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-php_java_rsa_crypt_pkcs8" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/10/27/php_java_rsa_crypt_pkcs8/" class="article-date">
+  <time datetime="2015-10-27T07:47:09.000Z" itemprop="datePublished">2015-10-27</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/10/27/php_java_rsa_crypt_pkcs8/">php 和 java 之间 RSA 加密互通问题</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p><a href="http://rust.love/2015/10/26/php_java_rsa_crypt/">前一篇</a>主要是简单的实现了 php 的加密和解密问题，只是对秘钥格式的处理。这篇主要说我遇到的问题，java 加密以后，php 没办法解密，代码如下：</p>
+<figure class="highlight xquery"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public static <span class="keyword">function</span> decryptPrivate(<span class="variable">$data</span>, <span class="variable">$rsakeypath</span>) &#123;</span><br><span class="line">    <span class="variable">$content</span> = self::getContent(<span class="variable">$rsakeypath</span>);    </span><br><span class="line">    if (<span class="variable">$content</span>) &#123;</span><br><span class="line">        <span class="variable">$pem</span> = self::transJavaRsaKeyToPhpOpenSSL(<span class="variable">$content</span>);</span><br><span class="line">        <span class="variable">$pem</span> = self::appendFlags(<span class="variable">$pem</span>, false);</span><br><span class="line">        <span class="variable">$res</span> = openssl_pkey_get_private(<span class="variable">$pem</span>);</span><br><span class="line">        if (<span class="variable">$res</span>) &#123;</span><br><span class="line">            <span class="variable">$opt</span> = openssl_private_decrypt(<span class="variable">$data</span>, <span class="variable">$result</span>, <span class="variable">$res</span>);</span><br><span class="line">            if (<span class="variable">$opt</span>) &#123;</span><br><span class="line">                return <span class="variable">$result</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>也就是说 <code>$res</code> 这个返回是正确的，而<code>openssl_private_decrypt</code> 这个函数解密失败，下面先看看 java 的部分代码</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> String <span class="title">getAligorithm</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">"RSA"</span>; <span class="comment">// must be RSA/ECB/PKCS1Padding ? why ?</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">encrypty</span><span class="params">(String src)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>.encrypt != null)</span><br><span class="line">        src = <span class="keyword">this</span>.encrypt.encrypty(src);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        Cipher cipher = Cipher.getInstance(getAligorithm());</span><br><span class="line">        cipher.init(<span class="number">1</span>, getKey(Base64.decodeBase64(<span class="keyword">this</span>.sKey.getBytes())));</span><br><span class="line">        byte[] clearData = src.getBytes(<span class="keyword">this</span>.encoding);</span><br><span class="line">        byte[] secData = <span class="keyword">new</span> byte[((clearData.length - <span class="number">1</span>) / <span class="number">117</span> + <span class="number">1</span>) * <span class="number">128</span>];</span><br><span class="line">        <span class="keyword">int</span> m = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> n = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (; clearData.length - m &gt; <span class="number">117</span>; m += <span class="number">117</span>)</span><br><span class="line">            n += cipher.doFinal(clearData, m, <span class="number">117</span>, secData, n);</span><br><span class="line">        cipher.doFinal(clearData, m, clearData.length - m, secData, n);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> String(Base64.encodeBase64(secData));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> EncryptyException(e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面 java 代码的 <code>getAligorithm()</code> 这个方法，返回了 “RSA” ，查阅了很多的资料，显示他是失败之源，需要改成 <code>RSA/ECB/PCKS1Padding</code> ，因为 jar 包是第三方合作项目，所以这里也只能是反编译来查看代码，没有办法在原来的代码基础上进行修改，为什么需要改成 <code>RSA/ECB/PCKS1Padding</code> 我还不清楚，也没有从官方文档查到相关说明，唯一网上的解释是 如果用php解密必须这样设置，为此发了 <a href="http://stackoverflow.com/questions/33359711/php-cant-decrypt-javas-rsa-ecnrypt-string" target="_blank" rel="external">stackoverflow</a>，希望能得到回复。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://rust.love/2015/10/27/php_java_rsa_crypt_pkcs8/" data-id="cig92lq450000gouppqmua56x" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-php_java_rsa_crypt" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/10/26/php_java_rsa_crypt/" class="article-date">
@@ -298,7 +339,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/10/">October 2015</a><span class="archive-list-count">5</span></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/10/">October 2015</a><span class="archive-list-count">6</span></li></ul>
     </div>
   </div>
 
@@ -308,6 +349,10 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2015/10/27/php_java_rsa_crypt_pkcs8/">php 和 java 之间 RSA 加密互通问题</a>
+          </li>
         
           <li>
             <a href="/2015/10/26/php_java_rsa_crypt/">php 和 java RSA 对称加密互通的问题</a>
@@ -323,10 +368,6 @@
         
           <li>
             <a href="/2015/10/16/php_anonymous_function_params/">php 中函数作为参数传递的几种形式</a>
-          </li>
-        
-          <li>
-            <a href="/2015/10/14/hello-world/">Hello World</a>
           </li>
         
       </ul>
