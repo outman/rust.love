@@ -68,6 +68,57 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-php_codexception_api_testing" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/12/04/php_codexception_api_testing/" class="article-date">
+  <time datetime="2015-12-04T03:06:19.000Z" itemprop="datePublished">2015-12-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/12/04/php_codexception_api_testing/">Codeception API testing</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>一个比较惭愧的事情是做开发这么久了，却很少写测试（单元、集成测试等）。每当项目要求写单元测试的时候，我的内心基本是抵制的，基本上程序都自测通过以后都能正常上线，bug 数量也很低 :) 。</p>
+<p>因为最近为了规范项目，保证项目质量，需要写一些测试，看到了 codeception 这个全栈的测试框架非常欣喜，强大、易用。由于 composer 的介入，也让安装变得各种容易（网络环境就不说了）。</p>
+<p>关于 codeception 的功能就不多介绍了，相关的功能看<a href="http://x.21fcloud.com.cn/2015/02/03/%E4%B8%80%E4%B8%AA%E5%85%A8%E5%A0%86%E6%A0%88%E7%9A%84-php-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E2%80%94%E2%80%94codeception/" target="_blank" rel="external">这篇文章</a> 里面唯独对 API testing 说的比较简单，我这里简单的说下 API testing 的使用。（假设 codeception 已经安装好）</p>
+<p>简易的项目目录<br><figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">www</span><br><span class="line"><span class="string">|--tests</span></span><br></pre></td></tr></table></figure></p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">cd</span> www</span><br><span class="line">codecept <span class="keyword">bootstrap</span></span><br><span class="line">codecept <span class="keyword">generate</span>:suite api</span><br><span class="line">codecept <span class="keyword">generate</span>:cept api User</span><br></pre></td></tr></table></figure>
+<p>经过上面的操作以后，在 tests 目录下已经有了很多文件了，其中会有一些 api 相关的文件。</p>
+<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">cat api.suite.yml </span><br><span class="line"><span class="preprocessor"># 配置文件</span></span><br><span class="line"></span><br><span class="line"><span class="label">class_name:</span> ApiTester</span><br><span class="line"><span class="label">modules:</span></span><br><span class="line">    enabled: [ApiHelper, PhpBrowser]</span><br><span class="line">    config:</span><br><span class="line">        PhpBrowser:</span><br><span class="line">            url: http://httpbin<span class="preprocessor">.org</span></span><br></pre></td></tr></table></figure>
+<p>此时的目录信息，还有一些省略的文件</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">www</span><br><span class="line"><span class="string">|--tests</span></span><br><span class="line"><span class="string">|----api</span></span><br><span class="line"><span class="string">|------_bootstrap.php</span></span><br><span class="line"><span class="string">|------UserCept.php</span></span><br></pre></td></tr></table></figure>
+<p>编写 UserCept.php 来进行简单的测试<br><figure class="highlight xquery"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">cat UserCept.php</span><br><span class="line"></span><br><span class="line">&lt;?php</span><br><span class="line"><span class="variable">$I</span> = new ApiTester(<span class="variable">$scenario</span>);</span><br><span class="line"><span class="variable">$I-</span>&gt;wantTo(<span class="string">'see my ip'</span>);</span><br><span class="line"><span class="variable">$I-</span>&gt;amOnPage(<span class="string">'/ip'</span>);</span><br><span class="line"><span class="variable">$I-</span>&gt;seeResponseCodeIs(<span class="number">200</span>);</span><br><span class="line"><span class="variable">$I-</span>&gt;see(<span class="string">'origin'</span>);</span><br></pre></td></tr></table></figure></p>
+<p>运行和查看测试结果<br><figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">cd</span> www</span><br><span class="line">codecept build</span><br><span class="line">codecept <span class="keyword">run</span> api -v</span><br></pre></td></tr></table></figure></p>
+<p>运行之后会看到一些结果信息。相关的 codeception 的内置函数等请浏览相关的文档，一个简单的 api 测试编写完了。</p>
+<p>eof;</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://rust.love/2015/12/04/php_codexception_api_testing/" data-id="cihr3awoj0000b8up2lo96yht" class="article-share-link">Share</a>
+      
+        <a href="http://rust.love/2015/12/04/php_codexception_api_testing/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-git_fix_bug_flow" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/12/01/git_fix_bug_flow/" class="article-date">
@@ -490,7 +541,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/10/">October 2015</a><span class="archive-list-count">6</span></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/10/">October 2015</a><span class="archive-list-count">6</span></li></ul>
     </div>
   </div>
 
@@ -500,6 +551,10 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2015/12/04/php_codexception_api_testing/">Codeception API testing</a>
+          </li>
         
           <li>
             <a href="/2015/12/01/git_fix_bug_flow/">git 修复 bug 的基本流程</a>
@@ -515,10 +570,6 @@
         
           <li>
             <a href="/2015/10/28/php_java_rsa_crypt_pkcs8/">php 和 java 之间 RSA 加密互通问题</a>
-          </li>
-        
-          <li>
-            <a href="/2015/10/26/php_java_rsa_crypt/">php 和 java RSA 对称加密互通的问题</a>
           </li>
         
       </ul>
