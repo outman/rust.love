@@ -68,6 +68,86 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-yaf_php_framework" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2016/01/05/yaf_php_framework/" class="article-date">
+  <time datetime="2016-01-05T09:39:41.000Z" itemprop="datePublished">2016-01-05</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/01/05/yaf_php_framework/">Yaf framework 相关</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="Yaf_项目骨架">Yaf 项目骨架</h1><p>在 yaf 的源码目录，附带了一个工具 tools 目录， 下面有个 cg/yaf_cg 工具，是通过模版生成 yaf 项目骨架的工具。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Usage:&#10;./yaf_cg ApplicationName [ApplicationPath]</span><br></pre></td></tr></table></figure>
+<p>项目目录<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#9500;&#9472;&#9472; application&#10;&#9474;&#160;&#160; &#9500;&#9472;&#9472; Bootstrap.php&#10;&#9474;&#160;&#160; &#9500;&#9472;&#9472; controllers&#10;&#9474;&#160;&#160; &#9500;&#9472;&#9472; library&#10;&#9474;&#160;&#160; &#9500;&#9472;&#9472; models&#10;&#9474;&#160;&#160; &#9500;&#9472;&#9472; plugins&#10;&#9474;&#160;&#160; &#9492;&#9472;&#9472; views&#10;&#9500;&#9472;&#9472; conf&#10;&#9474;&#160;&#160; &#9492;&#9472;&#9472; application.ini&#10;&#9492;&#9472;&#9472; index.php</span><br></pre></td></tr></table></figure></p>
+<ol>
+<li>index.php 程序的入口文件</li>
+<li><p>application 主要的应用程序代码目录。<br>2.1 可以通过<code>application.directory</code>这个配置来修改。<br>2.2 application 目录下的目录（controllers、models、plugins、views）是默认的代码结构目录，yaf 会根据相关的类名称，去相关目录下加载相关的文件，例如 <code>IndexController extends Yaf\Controller_Abstract</code> 这个文件，yaf 就会到 <code>controllers</code> 目录下查找 Index.php、类<code>UserModel</code>就会到 models 目录下查找 User.php（可以定制文件后缀或前缀模式，如 ModelUser 就是前缀模式）。<br>2.3 除了 library 目录以外，其它目录都是在框架编译的时候确定的，library 目录主要是存放一些本地库文件例如我有个<code>Helper_Html (名称空间模式 Helper\Html)</code>类，通过注册本地类名称空间<code>Yaf_Loader::registerLocalNamespace(&quot;Helper&quot;)</code>来加载，文件的存储结构是 <code>library/helper/Html.php</code> 需要注意的就是要开启名称空间，使用<code>namespace</code>的类名称和不使用<code>namespace</code>的 classname 有些差异。<br>2.4 Bootstrap.php 是框架的引导类 (可以没有)，继承自 <code>Yaf\Bootstrap_Abstract</code>，在 Application 对象创建的时候可以调用 <code>$application-&gt;bootstrap()-&gt;run()</code> 这样会执行Bootstrap类里所有<code>_init</code>开头的方法，一般用于初始化一些配置或者数据或者初始化plugin等资源。</p>
+</li>
+<li><p>conf 是配置文件目录， 也是可以修改的。</p>
+</li>
+</ol>
+<h1 id="Yaf_完成一次请求的流程图">Yaf 完成一次请求的流程图</h1><p><img src="/images/yaf_sequence.png" alt="yaf流程图"></p>
+<h1 id="流程解读">流程解读</h1><h2 id="index-php_入口">index.php 入口</h2><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">&lt;?php</span></span><br><span class="line">define(<span class="string">'APPLICATION_PATH'</span>, dirname(<span class="keyword">__FILE__</span>));</span><br><span class="line"></span><br><span class="line"><span class="variable">$application</span> = <span class="keyword">new</span> Yaf\Application(APPLICATION_PATH . <span class="string">"/conf/application.ini"</span>);</span><br><span class="line"><span class="variable">$application</span>-&gt;bootstrap() <span class="comment">// 执行引导类Bootstrap.php 相关的引导方法</span></span><br><span class="line">    -&gt;run();</span><br></pre></td></tr></table></figure>
+<h2 id="Bootstrap-php_引导类">Bootstrap.php 引导类</h2><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">&lt;?php</span></span><br><span class="line"><span class="comment">/**</span><br><span class="line"> * 所有的 _init 开头的的方法，都会被执行</span><br><span class="line"> */</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Bootstrap</span> <span class="keyword">extends</span> <span class="title">Yaf</span>\<span class="title">Bootstrap_Abstract</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="comment">/**</span><br><span class="line">     * 初始化本地类库的名称空间 Biz Ns</span><br><span class="line">     * 例如本地类库 Biz_Test, Ns\Test 放在library目录下</span><br><span class="line">     * library/biz/Test.php  </span><br><span class="line">     * library/ns/Test.php</span><br><span class="line">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">_initRegisterLocalClass</span><span class="params">(Yaf\Dispatcher <span class="variable">$dispatcher</span>)</span></span><br><span class="line">    </span>&#123;</span><br><span class="line">        <span class="variable">$loader</span> = Yaf\Loader::getInstance();</span><br><span class="line">        <span class="variable">$loader</span>-&gt;registerLocalNamespace(<span class="keyword">array</span>(<span class="string">"Biz"</span>, <span class="string">"Ns"</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span><br><span class="line">     * 初始化一些配置信息</span><br><span class="line">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">_initConfig</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="variable">$arrConfig</span> = Yaf\Application::app()-&gt;getConfig();</span><br><span class="line">        Yaf\Registry::set(<span class="string">'config'</span>, <span class="variable">$arrConfig</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">_initPlugin</span><span class="params">(Yaf\Dispatcher <span class="variable">$dispatcher</span>)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 初始化一些插件， 插件文件存放在 plugins 目录，</span></span><br><span class="line">        <span class="comment">// 类名字规则是 <span class="label">XxxxPlugin 放在 plugins 下的 Xxxx.php 文件</span></span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">_initRoute</span><span class="params">(Yaf\Dispatcher <span class="variable">$dispatcher</span>)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 增加一些路由规则</span></span><br><span class="line">        <span class="comment">// 默认是 Yaf_Route_Static</span></span><br><span class="line">        <span class="comment">// 支持以下方式</span></span><br><span class="line">        <span class="comment">// Yaf_Route_Simple</span></span><br><span class="line">        <span class="comment">// Yaf_Route_Supervar</span></span><br><span class="line">        <span class="comment">// Yaf_Route_Static</span></span><br><span class="line">        <span class="comment">// Yaf_Route_Map</span></span><br><span class="line">        <span class="comment">// Yaf_Route_Rewrite</span></span><br><span class="line">        <span class="comment">// Yaf_Route_Regex</span></span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    …… 可以做更多的事情</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="插件_Plugins">插件 Plugins</h2><p>创建一个插件 Sample<br><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Sample.php</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SamplePlugin</span> <span class="keyword">extends</span> <span class="title">Yaf</span>\<span class="title">Plugin_Abstract</span> </span>&#123;</span><br></pre></td></tr></table></figure></p>
+<p>插件定义了6个 hook<br><figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">routerStartup</span></span><br><span class="line">routerShutdown</span><br><span class="line">dispatchLoopStartup</span><br><span class="line">preDispatch</span><br><span class="line">postDispatch</span><br><span class="line">dispatchLoopShutdown</span><br></pre></td></tr></table></figure></p>
+<p>插件的执行顺序是先进先调用。</p>
+<h2 id="路由规则_routes">路由规则 routes</h2><p>yaf 支持多种路由规则，默认采用了<code>Yaf_Route_Static</code>方式，支持以下方式<br><figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">Yaf_Route_Simple</span></span><br><span class="line">Yaf_Route_Supervar</span><br><span class="line">Yaf_Route_Static</span><br><span class="line">Yaf_Route_Map</span><br><span class="line">Yaf_Route_Rewrite</span><br><span class="line">Yaf_Route_Regex</span><br></pre></td></tr></table></figure></p>
+<p>路由规则可以配置在 application.ini 配置文件内，也可以在程序初始化的时候动态生成增加，用户也可以通过实现<code>Route_Interface</code>接口，自定义路由规则。具体各种路由协议的含义和使用方式见<a href="http://www.laruence.com/manual/yaf.routes.html" target="_blank" rel="external">路由协议详解</a>。</p>
+<h2 id="视图_Views">视图 Views</h2><p>yaf 的视图文件默认放在 views 目录下，默认文件后缀名称 <code>.phtml</code>，view 文件就是 php 文件。</p>
+<h2 id="模块_modules_支持">模块 modules 支持</h2><ol>
+<li><p>yaf 默认支持模块的，在默认的路由模式下，一般请求的路径为 <code>/index.php/Module/Controller/Action/p1/v1/p2/v2</code> （通过 rewrite 规则去除 index.php）就是 <code>/Module/Controller/Action/p1/v1/p2/v2</code></p>
+</li>
+<li><p>如果不指定默认的模块控制器和action，那么这三个值默认为<code>Index</code>，请求 <code>/index.php</code> 执行的路由规则就是 <code>/Index/Index/Index</code>。</p>
+</li>
+<li><p>增加一个模块 Test, 需要配置 <code>application.modules=&quot;Index,Test&quot;</code> ，且在 applications 下增加 modules/Test/controllers 文件夹，这样 <code>/test/index/index</code> 就会执行 <code>modules/Test/controllers/Index.php</code> 文件的 <code>indexAction</code> 方法</p>
+</li>
+<li><p>如果只有一个默认 module ，那么不需要 modules 文件夹。</p>
+</li>
+</ol>
+<h2 id="引入外部库">引入外部库</h2><h3 id="composer_方式">composer 方式</h3><p>通过 composer 安装的第三方库都会带有autoload.php 文件，那么根据具体的情况可以在 index.php 入口文件或者 Bootstrap 引导类内，加载这个 autoload.php 文件来使用外部类，例如<br><figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="preprocessor">&lt;?php</span></span><br><span class="line"><span class="comment">// index.php</span></span><br><span class="line">define(<span class="string">'APPLICATION_PATH'</span>, </span><br><span class="line">dirname(<span class="keyword">__FILE__</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">// 引入第三方类库</span></span><br><span class="line"><span class="keyword">require</span>(APPLICATION_PATH . <span class="string">'/vendor/autoload.php'</span>);</span><br><span class="line"></span><br><span class="line"><span class="variable">$application</span> = <span class="keyword">new</span> Yaf\Application(APPLICATION_PATH . <span class="string">"/conf/application.ini"</span>);</span><br><span class="line"><span class="variable">$application</span>-&gt;bootstrap()</span><br><span class="line"> -&gt;run();</span><br><span class="line"></span><br><span class="line">在 Controller 使用第三方库</span><br><span class="line"><span class="preprocessor">&lt;?php</span></span><br><span class="line"><span class="keyword">use</span> <span class="title">GuzzleHttp</span>\<span class="title">Client</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">IndexController</span> <span class="keyword">extends</span> <span class="title">Yaf</span>\<span class="title">Controller_Abstract</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">indexAction</span><span class="params">()</span></span><br><span class="line">    </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="variable">$httpClient</span> = <span class="keyword">new</span> Client();</span><br><span class="line">        var_dump(<span class="variable">$httpClient</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="全局库_yaf-library">全局库 yaf.library</h3><p>这个配置选项是配置在 php.ini 内的，例如多个项目需要公用一些全局的库文件，那么通过指定该路径，来让不同的项目之间共享同一个库文件。</p>
+<h3 id="自定义_class_loader">自定义 class loader</h3><p>如果你的库文件命名方式等不符合 yaf 的自动加载风格，那么可以自定义 auto 方式，可以在 Bootstrap 引导类加载的时候进行注册。</p>
+<h1 id="主要类库代码解析">主要类库代码解析</h1><h3 id="Yaf_Loader::autoload">Yaf_Loader::autoload</h3><p>这个是 Yaf 自动加载类的函数， 整个加载行为会受到 <code>yaf.use_spl_autoload</code> 这个配置的影响，开启的情况下, Yaf在加载不成功的情况下, 会继续让PHP的自动加载函数加载，否则会触发 E_WARNING 或者 E_STRICT 下面是相关部分源码：<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (yaf_internal_autoload(file_name, file_name_len, &amp;directory TSRMLS_CC)) &#123;</span><br><span class="line">    <span class="keyword">char</span> *lc_classname = zend_str_tolower_dup(origin_classname, class_name_len);</span><br><span class="line">    <span class="keyword">if</span> (zend_hash_exists(EG(class_table), lc_classname, class_name_len + <span class="number">1</span>)) &#123;</span><br><span class="line">        ……</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        efree(lc_classname);</span><br><span class="line">        php_error_docref(<span class="literal">NULL</span> TSRMLS_CC, E_STRICT, <span class="string">"Could not find class %s in %s"</span>, class_name, directory);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;  <span class="keyword">else</span> &#123;</span><br><span class="line">    php_error_docref(<span class="literal">NULL</span> TSRMLS_CC, E_WARNING, <span class="string">"Failed opening script %s: %s"</span>, directory, strerror(errno));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="Yaf_Loader::autoload_流程图">Yaf_Loader::autoload 流程图</h3><p><img src="/images/autoload.png" alt="Yaf_Loader::autoload 流程图"></p>
+<ol>
+<li>将 \ 处理为 <em> 主要是为了让类名无论是名称空间模式，还是 </em> 模式，都兼容。</li>
+<li>确定文件目录位置： 主要是根据系统的几个固定目录来判断文件的位置 controllers、models、plugins、library 等。</li>
+</ol>
+<h3 id="Yaf_Application::bootstrap">Yaf_Application::bootstrap</h3><p>除了 autoload 是一个比较重要的方法以外，bootstrap 也是一个比较重要的方法，因为经常会有很多数据初始化等代码需要在这个阶段来做，<code>bootstrap()</code>方法的主要工作就是循环遍历 <code>Bootstrap extends Yaf_Bootstrap</code> 这个类的所有以 _init 开头的方法，相关代码如下<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">methods = &amp;((*ce)-&gt;function_table);</span><br><span class="line"><span class="keyword">for</span>(zend_hash_internal_pointer_reset(methods);</span><br><span class="line">        zend_hash_has_more_elements(methods) == SUCCESS;</span><br><span class="line">        zend_hash_move_forward(methods)) &#123;</span><br><span class="line">    <span class="keyword">char</span> *func;</span><br><span class="line">    uint len;</span><br><span class="line">    ulong idx;</span><br><span class="line">    zend_hash_get_current_key_ex(methods, &amp;func, &amp;len, &amp;idx, <span class="number">0</span>, <span class="literal">NULL</span>);</span><br><span class="line">    <span class="comment">/* cann't use ZEND_STRL in strncasecmp, it cause a compile failed in VS2009 */</span></span><br><span class="line">    <span class="comment">/* YAF_BOOTSTRAP_INITFUNC_PREFIX 就是 _init */</span></span><br><span class="line">    <span class="keyword">if</span> (strncasecmp(func, YAF_BOOTSTRAP_INITFUNC_PREFIX, <span class="keyword">sizeof</span>(YAF_BOOTSTRAP_INITFUNC_PREFIX)-<span class="number">1</span>)) &#123;</span><br><span class="line">        <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    zend_call_method(&amp;bootstrap, *ce, <span class="literal">NULL</span>, func, len - <span class="number">1</span>, <span class="literal">NULL</span>, <span class="number">1</span>, dispatcher, <span class="literal">NULL</span> TSRMLS_CC);</span><br><span class="line">    <span class="comment">/** an uncaught exception threw in function call */</span></span><br><span class="line">    <span class="keyword">if</span> (EG(exception)) &#123;</span><br><span class="line">        zval_ptr_dtor(&amp;bootstrap);</span><br><span class="line">        RETURN_FALSE;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="Yaf_Dispatcher">Yaf_Dispatcher</h3><p>Yaf_Dispatcher 是个非常重要的的类，基本贯穿了整个开发过程，包括 plugin 的注册和调用，都和 Yaf_Dispatcher 这个类密切相关。注册类的代码非常简单<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">PHP_METHOD(yaf_dispatcher, registerPlugin) &#123;</span><br><span class="line">    zval *plugin, *plugins;</span><br><span class="line">    <span class="keyword">yaf_dispatcher_t</span> *self = getThis();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, <span class="string">"z"</span>, &amp;plugin) == FAILURE) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (Z_TYPE_P(plugin) != IS_OBJECT || !instanceof_function(Z_OBJCE_P(plugin), yaf_plugin_ce TSRMLS_CC)) &#123;</span><br><span class="line">        php_error_docref(<span class="literal">NULL</span> TSRMLS_CC, E_WARNING, <span class="string">"Expect a %s instance"</span>, yaf_plugin_ce-&gt;name);</span><br><span class="line">        RETURN_FALSE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    plugins = zend_read_property(yaf_dispatcher_ce, self, ZEND_STRL(YAF_DISPATCHER_PROPERTY_NAME_PLUGINS), <span class="number">1</span> TSRMLS_CC);</span><br><span class="line"></span><br><span class="line">    Z_ADDREF_P(plugin);</span><br><span class="line">    add_next_index_zval(plugins, plugin);</span><br><span class="line"></span><br><span class="line">    RETVAL_ZVAL(self, <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>调用插件以及插件中的 6 个 hook 的代码主要集中在 <code>yaf_response_t * yaf_dispatcher_dispatch(yaf_dispatcher_t *dispatcher TSRMLS_DC)</code> 方法内，主要是 Yaf_Application::run() 的时候，调用该方法。<br><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** 代表了 hook 的 6 个阶段</span><br><span class="line">    YAF_PLUGIN_HOOK_ROUTESTARTUP</span><br><span class="line">    YAF_PLUGIN_HOOK_ROUTESHUTDOWN</span><br><span class="line">    YAF_PLUGIN_HOOK_LOOPSTARTUP</span><br><span class="line">    YAF_PLUGIN_HOOK_PREDISPATCH</span><br><span class="line">    YAF_PLUGIN_HOOK_POSTDISPATCH</span><br><span class="line">    YAF_PLUGIN_HOOK_LOOPSHUTDOWN</span><br><span class="line"> */</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (!yaf_request_is_routed(request TSRMLS_CC)) &#123;</span><br><span class="line">    YAF_PLUGIN_HANDLE(plugins, YAF_PLUGIN_HOOK_ROUTESTARTUP, request, response);</span><br><span class="line">    YAF_EXCEPTION_HANDLE(dispatcher, request, response);</span><br><span class="line">    <span class="keyword">if</span> (!yaf_dispatcher_route(dispatcher, request TSRMLS_CC)) &#123;</span><br><span class="line">        yaf_trigger_error(YAF_ERR_ROUTE_FAILED TSRMLS_CC, <span class="string">"Routing request failed"</span>);</span><br><span class="line">        YAF_EXCEPTION_HANDLE_NORET(dispatcher, request, response);</span><br><span class="line">        zval_ptr_dtor(&amp;response);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    yaf_dispatcher_fix_default(dispatcher, request TSRMLS_CC);</span><br><span class="line">    YAF_PLUGIN_HANDLE(plugins, YAF_PLUGIN_HOOK_ROUTESHUTDOWN, request, response);</span><br><span class="line">    YAF_EXCEPTION_HANDLE(dispatcher, request, response);</span><br><span class="line">    (<span class="keyword">void</span>)yaf_request_set_routed(request, <span class="number">1</span> TSRMLS_CC);</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    yaf_dispatcher_fix_default(dispatcher, request TSRMLS_CC);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">YAF_PLUGIN_HANDLE(plugins, YAF_PLUGIN_HOOK_LOOPSTARTUP, request, response);</span><br><span class="line">YAF_EXCEPTION_HANDLE(dispatcher, request, response);</span><br><span class="line"></span><br><span class="line">view = yaf_dispatcher_init_view(dispatcher, <span class="literal">NULL</span>, <span class="literal">NULL</span> TSRMLS_CC);</span><br><span class="line"><span class="keyword">if</span> (!view) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">do</span> &#123;</span><br><span class="line">    YAF_PLUGIN_HANDLE(plugins, YAF_PLUGIN_HOOK_PREDISPATCH, request, response);</span><br><span class="line">    YAF_EXCEPTION_HANDLE(dispatcher, request, response);</span><br><span class="line">    <span class="keyword">if</span> (!yaf_dispatcher_handle(dispatcher, request, response, view TSRMLS_CC)) &#123;</span><br><span class="line">        YAF_EXCEPTION_HANDLE(dispatcher, request, response);</span><br><span class="line">        zval_ptr_dtor(&amp;response);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    yaf_dispatcher_fix_default(dispatcher, request TSRMLS_CC);</span><br><span class="line">    YAF_PLUGIN_HANDLE(plugins, YAF_PLUGIN_HOOK_POSTDISPATCH, request, response);</span><br><span class="line">    YAF_EXCEPTION_HANDLE(dispatcher, request, response);</span><br><span class="line">&#125; <span class="keyword">while</span> (--nesting &gt; <span class="number">0</span> &amp;&amp; !yaf_request_is_dispatched(request TSRMLS_CC));</span><br><span class="line"></span><br><span class="line">YAF_PLUGIN_HANDLE(plugins, YAF_PLUGIN_HOOK_LOOPSHUTDOWN, request, response);</span><br><span class="line">YAF_EXCEPTION_HANDLE(dispatcher, request, response);</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (<span class="number">0</span> == nesting &amp;&amp; !yaf_request_is_dispatched(request TSRMLS_CC)) &#123;</span><br><span class="line">    yaf_trigger_error(YAF_ERR_DISPATCH_FAILED TSRMLS_CC, <span class="string">"The max dispatch nesting %ld was reached"</span>, YAF_G(forward_limit));</span><br><span class="line">    YAF_EXCEPTION_HANDLE_NORET(dispatcher, request, response);</span><br><span class="line">    zval_ptr_dtor(&amp;response);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>以上就是几个主要的类和相关代码流程。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://rust.love/2016/01/05/yaf_php_framework/" data-id="cij17g73v0000qeupewpfoqrk" class="article-share-link">Share</a>
+      
+        <a href="http://rust.love/2016/01/05/yaf_php_framework/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-mysql-56-some-feature" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2015/12/22/mysql-56-some-feature/" class="article-date">
@@ -575,51 +655,6 @@
 
 
   
-    <article id="post-php_install_memcached_error_zlib" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/10/21/php_install_memcached_error_zlib/" class="article-date">
-  <time datetime="2015-10-21T05:24:50.000Z" itemprop="datePublished">2015-10-21</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/10/21/php_install_memcached_error_zlib/">php 安装 memcached 扩展出现 zlib 错误</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>在 Mac OS X 10.11 中通过 </p>
-<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">brew </span>install php55-memcached</span><br></pre></td></tr></table></figure>
-<p>的时候出现</p>
-<figure class="highlight groovy"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">configure:</span> <span class="string">error:</span> memcached support requires ZLIB</span><br></pre></td></tr></table></figure>
-<p>却少 ZLIB 相关库，解决办法就是通过 Xcode 来安装</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">xcode-<span class="built_in">select</span> <span class="comment">--install</span></span><br></pre></td></tr></table></figure>
-<p>后再次通过 brew 来安装。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://rust.love/2015/10/21/php_install_memcached_error_zlib/" data-id="cig0cvkel0000etup6u5we685" class="article-share-link">Share</a>
-      
-        <a href="http://rust.love/2015/10/21/php_install_memcached_error_zlib/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
@@ -639,7 +674,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/10/">October 2015</a><span class="archive-list-count">6</span></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/01/">January 2016</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/10/">October 2015</a><span class="archive-list-count">6</span></li></ul>
     </div>
   </div>
 
@@ -649,6 +684,10 @@
     <h3 class="widget-title">Recents</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2016/01/05/yaf_php_framework/">Yaf framework 相关</a>
+          </li>
         
           <li>
             <a href="/2015/12/22/mysql-56-some-feature/">MySQL5.6 部分特性介绍</a>
@@ -666,10 +705,6 @@
             <a href="/2015/12/01/git_fix_bug_flow/">git 修复 bug 的基本流程</a>
           </li>
         
-          <li>
-            <a href="/2015/11/18/php_mt_rand_numbers/">php 在 fpm 下生成随机数研究</a>
-          </li>
-        
       </ul>
     </div>
   </div>
@@ -682,7 +717,7 @@
   
   <div class="outer">
     <div id="footer-info" class="inner">
-      &copy; 2015 OutMan<br>
+      &copy; 2016 OutMan<br>
       Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     </div>
   </div>
