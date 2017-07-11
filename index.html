@@ -71,7 +71,7 @@
     <article id="post-rabbitmq_some_tips" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2017/07/11/rabbitmq_some_tips/" class="article-date">
-  <time datetime="2017-07-11T10:22:19.000Z" itemprop="datePublished">2017-07-11</time>
+  <time datetime="2017-07-11T10:25:39.000Z" itemprop="datePublished">2017-07-11</time>
 </a>
     
   </div>
@@ -92,13 +92,9 @@
       
         <h2 id="三个概念">三个概念</h2><h3 id="Exchange">Exchange</h3><h3 id="Channel">Channel</h3><h3 id="Queue">Queue</h3><p>客户端和服务建立连接，通过 Channel 向 Exchange 发送消息，Exchange 通过 Routing<br>Key 将消息路由到 Queue （Exchange 和 Queue 通过 Routing Key<br>建立绑定关系，Routing Key 也可以为空）.</p>
 <h2 id="Exchange_三个类型">Exchange 三个类型</h2><h3 id="fanout">fanout</h3><h3 id="direct">direct</h3><h3 id="topic">topic</h3><ul>
-<li>fanout 简单的来说是广播模式，即 Exchange<br>会把消息广播给所有和他绑定的队列，使用场景多个业务线需要使用同一份数据，每个业务线可以建立一个<br>Queue，这样通过广播的形式把同一条消息发给每个队列。<ul>
-<li>direct 从字面来理解是直接发送，即 Exchange 会通过 Routing Key<br>把消息路由到指定的队列，目前我们的使用场景是 APP 上传日志，通过一个 Exchange<br>路由到 5 个 Queue，这样可以有 5<br>个消费者来消费，因为日之内有时间戳，所以对时序无要求。单纯的对一个队列增加消费者，是没办法直接提高消费速度的。<ul>
-<li>topic 可以通过通配符（正则表达式）Routing Key 来把消息路由到<br>Queue，目前我们没有使用这种模式。</li>
-</ul>
-</li>
-</ul>
-</li>
+<li>fanout 简单的来说是广播模式，即 Exchange<br>会把消息广播给所有和他绑定的队列，使用场景多个业务线需要使用同一份数据，每个业务线可以建立一个<br>Queue，这样通过广播的形式把同一条消息发给每个队列。</li>
+<li>direct 从字面来理解是直接发送，即 Exchange 会通过 Routing Key 把消息路由到指定的队列，目前我们的使用场景是 APP 上传日志，通过一个 Exchange 路由到 5 个 Queue，这样可以有 5 个消费者来消费，因为日之内有时间戳，所以对时序无要求。单纯的对一个队列增加消费者，是没办法直接提高消费速度的。</li>
+<li>topic 可以通过通配符（正则表达式）Routing Key 来把消息路由到 Queue，目前我们没有使用这种模式。</li>
 </ul>
 <h2 id="两个参数">两个参数</h2><h3 id="durable">durable</h3><h3 id="delivery_mode">delivery_mode</h3><ul>
 <li>durable Exchange 是否持久化</li>
@@ -106,7 +102,10 @@
 </ul>
 <p>durable 和 delivery_mode<br>是必须要一致的才会生效，持久化消息服务重启不会丢失消息，而非持久化模式性能大约会提高<br>10 倍（数据来自网络，没亲测）。</p>
 <h3 id="关于_Exchange_、Queue_的建立和绑定">关于 Exchange 、Queue 的建立和绑定</h3><p>客户端在和服务端建立连接以后，会通过客户端提供的 <strong><em>*_declare<br>方法来创建，Exchange 和 Queue，通过 </em></strong>_bind 方法来绑定 Exchange 和 Queue，如果<br>Exchange 和 Queue 已经存在，则忽略，否则会创建。在创建时，会指定一些基础参数例如<br>durable，routing key 等，durable 要和 publish 消息是的 delivery_mode 一致。</p>
-<h2 id="consumer_utilisation_如果值比较低有以下几种可能，消费者太多（少），ACK_应答慢。">consumer_utilisation 如果值比较低有以下几种可能，消费者太多（少），ACK 应答慢。</h2><h2 id="prefetch_可以影响效率，官方文档有个表格。">prefetch 可以影响效率，官方文档有个表格。</h2><h2 id="frame_max_服务端参数，影响吞吐率和延迟">frame_max 服务端参数，影响吞吐率和延迟</h2>
+<h3 id="consumer_utilisation">consumer_utilisation</h3><p>如果值比较低有以下几种可能，消费者太多（少），ACK 应答慢。</p>
+<h3 id="prefetch">prefetch</h3><p>可以影响效率，官方文档有个表格。</p>
+<h3 id="frame_max">frame_max</h3><p>服务端参数，影响吞吐率和延迟</p>
+
       
     </div>
     <footer class="article-footer">
