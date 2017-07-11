@@ -3,21 +3,24 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Hello World | Rust.Love</title>
+  <title>RabbitMQ 的一点参考 | Rust.Love</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick">
+  <meta name="description" content="三个概念ExchangeChannelQueue客户端和服务建立连接，通过 Channel 向 Exchange 发送消息，Exchange 通过 RoutingKey 将消息路由到 Queue （Exchange 和 Queue 通过 Routing Key建立绑定关系，Routing Key 也可以为空）.
+Exchange 三个类型fanoutdirecttopic
+fanout 简单的来说">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hello World">
-<meta property="og:url" content="http://rust.love/2015/10/14/hello-world/index.html">
+<meta property="og:title" content="RabbitMQ 的一点参考">
+<meta property="og:url" content="http://rust.love/2017/07/11/rabbitmq_some_tips/index.html">
 <meta property="og:site_name" content="Rust.Love">
-<meta property="og:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick">
-<meta property="og:updated_time" content="2015-10-14T09:20:48.000Z">
+<meta property="og:description" content="三个概念ExchangeChannelQueue客户端和服务建立连接，通过 Channel 向 Exchange 发送消息，Exchange 通过 RoutingKey 将消息路由到 Queue （Exchange 和 Queue 通过 Routing Key建立绑定关系，Routing Key 也可以为空）.
+Exchange 三个类型fanoutdirecttopic
+fanout 简单的来说">
+<meta property="og:updated_time" content="2017-07-11T10:22:19.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Hello World">
-<meta name="twitter:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick">
+<meta name="twitter:title" content="RabbitMQ 的一点参考">
+<meta name="twitter:description" content="三个概念ExchangeChannelQueue客户端和服务建立连接，通过 Channel 向 Exchange 发送消息，Exchange 通过 RoutingKey 将消息路由到 Queue （Exchange 和 Queue 通过 Routing Key建立绑定关系，Routing Key 也可以为空）.
+Exchange 三个类型fanoutdirecttopic
+fanout 简单的来说">
 <meta name="twitter:creator" content="@pochonlee">
 <link rel="publisher" href="pochonlee">
   
@@ -70,10 +73,10 @@ Quick">
   </div>
 </header>
       <div class="outer">
-        <section id="main"><article id="post-hello-world" class="article article-type-post" itemscope itemprop="blogPost">
+        <section id="main"><article id="post-rabbitmq_some_tips" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2015/10/14/hello-world/" class="article-date">
-  <time datetime="2015-10-14T09:20:48.000Z" itemprop="datePublished">2015-10-14</time>
+    <a href="/2017/07/11/rabbitmq_some_tips/" class="article-date">
+  <time datetime="2017-07-11T10:22:19.000Z" itemprop="datePublished">2017-07-11</time>
 </a>
     
   </div>
@@ -84,7 +87,7 @@ Quick">
         
   
     <h1 class="article-title" itemprop="name">
-      Hello World
+      RabbitMQ 的一点参考
     </h1>
   
 
@@ -92,22 +95,29 @@ Quick">
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>Welcome to <a href="http://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p>
-<h2 id="Quick_Start">Quick Start</h2><h3 id="Create_a_new_post">Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p>
-<h3 id="Run_server">Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p>
-<h3 id="Generate_static_files">Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p>
-<h3 id="Deploy_to_remote_sites">Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>
-
+        <h2 id="三个概念">三个概念</h2><h3 id="Exchange">Exchange</h3><h3 id="Channel">Channel</h3><h3 id="Queue">Queue</h3><p>客户端和服务建立连接，通过 Channel 向 Exchange 发送消息，Exchange 通过 Routing<br>Key 将消息路由到 Queue （Exchange 和 Queue 通过 Routing Key<br>建立绑定关系，Routing Key 也可以为空）.</p>
+<h2 id="Exchange_三个类型">Exchange 三个类型</h2><h3 id="fanout">fanout</h3><h3 id="direct">direct</h3><h3 id="topic">topic</h3><ul>
+<li>fanout 简单的来说是广播模式，即 Exchange<br>会把消息广播给所有和他绑定的队列，使用场景多个业务线需要使用同一份数据，每个业务线可以建立一个<br>Queue，这样通过广播的形式把同一条消息发给每个队列。<ul>
+<li>direct 从字面来理解是直接发送，即 Exchange 会通过 Routing Key<br>把消息路由到指定的队列，目前我们的使用场景是 APP 上传日志，通过一个 Exchange<br>路由到 5 个 Queue，这样可以有 5<br>个消费者来消费，因为日之内有时间戳，所以对时序无要求。单纯的对一个队列增加消费者，是没办法直接提高消费速度的。<ul>
+<li>topic 可以通过通配符（正则表达式）Routing Key 来把消息路由到<br>Queue，目前我们没有使用这种模式。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="两个参数">两个参数</h2><h3 id="durable">durable</h3><h3 id="delivery_mode">delivery_mode</h3><ul>
+<li>durable Exchange 是否持久化</li>
+<li>delivery_mode publish 消息时是否持久化</li>
+</ul>
+<p>durable 和 delivery_mode<br>是必须要一致的才会生效，持久化消息服务重启不会丢失消息，而非持久化模式性能大约会提高<br>10 倍（数据来自网络，没亲测）。</p>
+<h3 id="关于_Exchange_、Queue_的建立和绑定">关于 Exchange 、Queue 的建立和绑定</h3><p>客户端在和服务端建立连接以后，会通过客户端提供的 <strong><em>*_declare<br>方法来创建，Exchange 和 Queue，通过 </em></strong>_bind 方法来绑定 Exchange 和 Queue，如果<br>Exchange 和 Queue 已经存在，则忽略，否则会创建。在创建时，会指定一些基础参数例如<br>durable，routing key 等，durable 要和 publish 消息是的 delivery_mode 一致。</p>
+<h2 id="consumer_utilisation_如果值比较低有以下几种可能，消费者太多（少），ACK_应答慢。">consumer_utilisation 如果值比较低有以下几种可能，消费者太多（少），ACK 应答慢。</h2><h2 id="prefetch_可以影响效率，官方文档有个表格。">prefetch 可以影响效率，官方文档有个表格。</h2><h2 id="frame_max_服务端参数，影响吞吐率和延迟">frame_max 服务端参数，影响吞吐率和延迟</h2>
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://rust.love/2015/10/14/hello-world/" data-id="cifqlgaza0000nbupwt2p2qfs" class="article-share-link">Share</a>
+      <a data-url="http://rust.love/2017/07/11/rabbitmq_some_tips/" data-id="cj4zfgyua0001oss6wnr7yf38" class="article-share-link">Share</a>
       
-        <a href="http://rust.love/2015/10/14/hello-world/#disqus_thread" class="article-comment-link">Comments</a>
+        <a href="http://rust.love/2017/07/11/rabbitmq_some_tips/#disqus_thread" class="article-comment-link">Comments</a>
       
       
     </footer>
@@ -116,15 +126,11 @@ Quick">
     
 <nav id="article-nav">
   
-    <a href="/2015/10/16/php_anonymous_function_params/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          php 中函数作为参数传递的几种形式
-        
-      </div>
-    </a>
   
+    <a href="/2017/06/07/php_functioncall_dumper/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title"></div>
+    </a>
   
 </nav>
 
@@ -213,7 +219,7 @@ Quick">
 <script>
   var disqus_shortname = 'rustlove';
   
-  var disqus_url = 'http://rust.love/2015/10/14/hello-world/';
+  var disqus_url = 'http://rust.love/2017/07/11/rabbitmq_some_tips/';
   
   (function(){
     var dsq = document.createElement('script');

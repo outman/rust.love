@@ -68,6 +68,90 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-rabbitmq_some_tips" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/07/11/rabbitmq_some_tips/" class="article-date">
+  <time datetime="2017-07-11T10:22:19.000Z" itemprop="datePublished">2017-07-11</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2017/07/11/rabbitmq_some_tips/">RabbitMQ 的一点参考</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="三个概念">三个概念</h2><h3 id="Exchange">Exchange</h3><h3 id="Channel">Channel</h3><h3 id="Queue">Queue</h3><p>客户端和服务建立连接，通过 Channel 向 Exchange 发送消息，Exchange 通过 Routing<br>Key 将消息路由到 Queue （Exchange 和 Queue 通过 Routing Key<br>建立绑定关系，Routing Key 也可以为空）.</p>
+<h2 id="Exchange_三个类型">Exchange 三个类型</h2><h3 id="fanout">fanout</h3><h3 id="direct">direct</h3><h3 id="topic">topic</h3><ul>
+<li>fanout 简单的来说是广播模式，即 Exchange<br>会把消息广播给所有和他绑定的队列，使用场景多个业务线需要使用同一份数据，每个业务线可以建立一个<br>Queue，这样通过广播的形式把同一条消息发给每个队列。<ul>
+<li>direct 从字面来理解是直接发送，即 Exchange 会通过 Routing Key<br>把消息路由到指定的队列，目前我们的使用场景是 APP 上传日志，通过一个 Exchange<br>路由到 5 个 Queue，这样可以有 5<br>个消费者来消费，因为日之内有时间戳，所以对时序无要求。单纯的对一个队列增加消费者，是没办法直接提高消费速度的。<ul>
+<li>topic 可以通过通配符（正则表达式）Routing Key 来把消息路由到<br>Queue，目前我们没有使用这种模式。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="两个参数">两个参数</h2><h3 id="durable">durable</h3><h3 id="delivery_mode">delivery_mode</h3><ul>
+<li>durable Exchange 是否持久化</li>
+<li>delivery_mode publish 消息时是否持久化</li>
+</ul>
+<p>durable 和 delivery_mode<br>是必须要一致的才会生效，持久化消息服务重启不会丢失消息，而非持久化模式性能大约会提高<br>10 倍（数据来自网络，没亲测）。</p>
+<h3 id="关于_Exchange_、Queue_的建立和绑定">关于 Exchange 、Queue 的建立和绑定</h3><p>客户端在和服务端建立连接以后，会通过客户端提供的 <strong><em>*_declare<br>方法来创建，Exchange 和 Queue，通过 </em></strong>_bind 方法来绑定 Exchange 和 Queue，如果<br>Exchange 和 Queue 已经存在，则忽略，否则会创建。在创建时，会指定一些基础参数例如<br>durable，routing key 等，durable 要和 publish 消息是的 delivery_mode 一致。</p>
+<h2 id="consumer_utilisation_如果值比较低有以下几种可能，消费者太多（少），ACK_应答慢。">consumer_utilisation 如果值比较低有以下几种可能，消费者太多（少），ACK 应答慢。</h2><h2 id="prefetch_可以影响效率，官方文档有个表格。">prefetch 可以影响效率，官方文档有个表格。</h2><h2 id="frame_max_服务端参数，影响吞吐率和延迟">frame_max 服务端参数，影响吞吐率和延迟</h2>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://rust.love/2017/07/11/rabbitmq_some_tips/" data-id="cj4zfgyua0001oss6wnr7yf38" class="article-share-link">Share</a>
+      
+        <a href="http://rust.love/2017/07/11/rabbitmq_some_tips/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-php_functioncall_dumper" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/06/07/php_functioncall_dumper/" class="article-date">
+  <time datetime="2017-06-07T03:34:57.000Z" itemprop="datePublished">2017-06-07</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>1、PHP 5.5.38</p>
+<p>extensions can’t override zend_execute() any more, they should override<br>zend_execute_ex() instead. The EG(current_execute_data) is already<br>initialized in zend_execute_ex(), so for compatibility extensions<br>may need to use EG(current_execute_data)-&gt;prev_execute_data<br>instead.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://rust.love/2017/06/07/php_functioncall_dumper/" data-id="cj4zfgyt90000oss6x4reenxi" class="article-share-link">Share</a>
+      
+        <a href="http://rust.love/2017/06/07/php_functioncall_dumper/#disqus_thread" class="article-comment-link">Comments</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-some_git_tils" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2016/01/29/some_git_tils/" class="article-date">
@@ -581,91 +665,6 @@
 
 
   
-    <article id="post-brew_install_vim_replace_system_vim" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/11/12/brew_install_vim_replace_system_vim/" class="article-date">
-  <time datetime="2015-11-12T01:08:35.000Z" itemprop="datePublished">2015-11-12</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/11/12/brew_install_vim_replace_system_vim/">replace system&#39;s vim with brew install</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>brew update</p>
-<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install macvim --<span class="keyword">with</span>-<span class="keyword">override</span>-system-vim</span><br></pre></td></tr></table></figure>
-<p>upgrade</p>
-<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew upgrade macvim --<span class="keyword">with</span>-<span class="keyword">override</span>-system-vim</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://rust.love/2015/11/12/brew_install_vim_replace_system_vim/" data-id="cigvjf7co00002aupn94l1fp6" class="article-share-link">Share</a>
-      
-        <a href="http://rust.love/2015/11/12/brew_install_vim_replace_system_vim/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-php_java_rsa_crypt_pkcs8" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2015/10/28/php_java_rsa_crypt_pkcs8/" class="article-date">
-  <time datetime="2015-10-28T02:12:52.000Z" itemprop="datePublished">2015-10-28</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2015/10/28/php_java_rsa_crypt_pkcs8/">php 和 java 之间 RSA 加密互通问题</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p><a href="http://rust.love/2015/10/26/php_java_rsa_crypt/">前一篇</a>主要是简单的实现了 php 的加密和解密问题，只是对秘钥格式的处理。这篇主要说我遇到的问题，java 加密以后，php 没办法解密，代码如下：</p>
-<figure class="highlight xquery"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">public static <span class="keyword">function</span> decryptPrivate(<span class="variable">$data</span>, <span class="variable">$rsakeypath</span>) &#123;</span><br><span class="line">    <span class="variable">$content</span> = self::getContent(<span class="variable">$rsakeypath</span>);    </span><br><span class="line">    if (<span class="variable">$content</span>) &#123;</span><br><span class="line">        <span class="variable">$pem</span> = self::transJavaRsaKeyToPhpOpenSSL(<span class="variable">$content</span>);</span><br><span class="line">        <span class="variable">$pem</span> = self::appendFlags(<span class="variable">$pem</span>, false);</span><br><span class="line">        <span class="variable">$res</span> = openssl_pkey_get_private(<span class="variable">$pem</span>);</span><br><span class="line">        if (<span class="variable">$res</span>) &#123;</span><br><span class="line">            <span class="variable">$opt</span> = openssl_private_decrypt(<span class="variable">$data</span>, <span class="variable">$result</span>, <span class="variable">$res</span>);</span><br><span class="line">            if (<span class="variable">$opt</span>) &#123;</span><br><span class="line">                return <span class="variable">$result</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    return false;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>也就是说 <code>$res</code> 这个返回是正确的，而<code>openssl_private_decrypt</code> 这个函数解密失败，下面先看看 java 的部分代码</p>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> String <span class="title">getAligorithm</span><span class="params">()</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">"RSA"</span>; <span class="comment">// must be RSA/ECB/PKCS1Padding ? why ?</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">encrypty</span><span class="params">(String src)</span></span><br><span class="line"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="keyword">this</span>.encrypt != null)</span><br><span class="line">        src = <span class="keyword">this</span>.encrypt.encrypty(src);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        Cipher cipher = Cipher.getInstance(getAligorithm());</span><br><span class="line">        cipher.init(<span class="number">1</span>, getKey(Base64.decodeBase64(<span class="keyword">this</span>.sKey.getBytes())));</span><br><span class="line">        byte[] clearData = src.getBytes(<span class="keyword">this</span>.encoding);</span><br><span class="line">        byte[] secData = <span class="keyword">new</span> byte[((clearData.length - <span class="number">1</span>) / <span class="number">117</span> + <span class="number">1</span>) * <span class="number">128</span>];</span><br><span class="line">        <span class="keyword">int</span> m = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">int</span> n = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (; clearData.length - m &gt; <span class="number">117</span>; m += <span class="number">117</span>)</span><br><span class="line">            n += cipher.doFinal(clearData, m, <span class="number">117</span>, secData, n);</span><br><span class="line">        cipher.doFinal(clearData, m, clearData.length - m, secData, n);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> String(Base64.encodeBase64(secData));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> EncryptyException(e);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>上面 java 代码的 <code>getAligorithm()</code> 这个方法，返回了 “RSA” ，查阅了很多的资料，显示他是失败之源，需要改成 <code>RSA/ECB/PCKS1Padding</code> ，因为 jar 包是第三方合作项目，所以这里也只能是反编译来查看代码，没有办法在原来的代码基础上进行修改，为什么需要改成 <code>RSA/ECB/PCKS1Padding</code> 我还不清楚，也没有从官方文档查到相关说明，唯一网上的解释是 如果用php解密必须这样设置。</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://rust.love/2015/10/28/php_java_rsa_crypt_pkcs8/" data-id="cig92lq450000gouppqmua56x" class="article-share-link">Share</a>
-      
-        <a href="http://rust.love/2015/10/28/php_java_rsa_crypt_pkcs8/#disqus_thread" class="article-comment-link">Comments</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
   
     <nav id="page-nav">
       <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next &raquo;</a>
@@ -685,7 +684,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/01/">January 2016</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/10/">October 2015</a><span class="archive-list-count">6</span></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/07/">July 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2016/01/">January 2016</a><span class="archive-list-count">3</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/12/">December 2015</a><span class="archive-list-count">4</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/11/">November 2015</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/10/">October 2015</a><span class="archive-list-count">6</span></li></ul>
     </div>
   </div>
 
@@ -697,6 +696,14 @@
       <ul>
         
           <li>
+            <a href="/2017/07/11/rabbitmq_some_tips/">RabbitMQ 的一点参考</a>
+          </li>
+        
+          <li>
+            <a href="/2017/06/07/php_functioncall_dumper/">(no title)</a>
+          </li>
+        
+          <li>
             <a href="/2016/01/29/some_git_tils/">Some Git Tips</a>
           </li>
         
@@ -706,14 +713,6 @@
         
           <li>
             <a href="/2016/01/05/yaf_php_framework/">Yaf framework 相关</a>
-          </li>
-        
-          <li>
-            <a href="/2015/12/22/mysql-56-some-feature/">MySQL5.6 部分特性介绍</a>
-          </li>
-        
-          <li>
-            <a href="/2015/12/07/migrate_api_from_yii1_to_yii2/">将 API 从 yii1 迁移到 yii2</a>
           </li>
         
       </ul>
@@ -728,7 +727,7 @@
   
   <div class="outer">
     <div id="footer-info" class="inner">
-      &copy; 2016 OutMan<br>
+      &copy; 2017 OutMan<br>
       Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     </div>
   </div>
