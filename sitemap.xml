@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://rust.love/2017/09/11/luminusweb_with_c3p0/</loc>
+    
+    <lastmod>2017-09-11T10:33:47.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://rust.love/2017/09/05/rabbitmq_some_tips/</loc>
     
     <lastmod>2017-09-05T04:10:31.000Z</lastmod>

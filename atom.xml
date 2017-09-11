@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://rust.love/"/>
-  <updated>2017-09-05T04:10:31.000Z</updated>
+  <updated>2017-09-11T10:33:47.000Z</updated>
   <id>http://rust.love/</id>
   
   <author>
@@ -14,6 +14,30 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>luminus web 配置 c3p0 数据库链接池</title>
+    <link href="http://rust.love/2017/09/11/luminusweb_with_c3p0/"/>
+    <id>http://rust.love/2017/09/11/luminusweb_with_c3p0/</id>
+    <published>2017-09-11T10:33:47.000Z</published>
+    <updated>2017-09-11T10:33:47.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>luminus 的 db 操作工具不太好用，所以换成了 funcool 的 jdbc 和 c3p0。</p>
+<h3 id="增加依赖">增加依赖</h3><figure class="highlight clojure"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="collection">[funcool/clojure.jdbc <span class="string">"0.9.0"</span>]</span></span><br><span class="line"><span class="collection">[mysql/mysql-connector-java <span class="string">"5.1.6"</span>]</span></span><br><span class="line"><span class="collection">[com.mchange/c3p0 <span class="string">"0.9.5"</span>]</span></span><br></pre></td></tr></table></figure>
+<h3 id="配置_dbpool">配置 dbpool</h3><figure class="highlight clojure"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="list">(<span class="keyword"><span class="built_in">def</span></span> dbpool <span class="list">(<span class="keyword"><span class="built_in">doto</span></span> <span class="list">(<span class="keyword">ComboPooledDataSource.</span>)</span></span><br><span class="line">              <span class="list">(<span class="keyword">.setJdbcUrl</span> <span class="list">(<span class="keyword"><span class="built_in">str</span></span> <span class="string">"jdbc:"</span></span><br><span class="line">                                <span class="list">(<span class="attribute">:subprotocol</span> dbspec)</span></span><br><span class="line">                                <span class="string">":"</span></span><br><span class="line">                                <span class="list">(<span class="attribute">:subname</span> dbspec)</span>)</span>)</span></span><br><span class="line">              <span class="list">(<span class="keyword">.setUser</span> <span class="list">(<span class="attribute">:dbuser</span> dbspec <span class="literal">nil</span>)</span>)</span></span><br><span class="line">              <span class="list">(<span class="keyword">.setPassword</span> <span class="list">(<span class="attribute">:dbpasswd</span> dbspec <span class="literal">nil</span>)</span>)</span></span><br><span class="line"></span><br><span class="line">              <span class="list">(<span class="keyword">.setMinPoolSize</span> <span class="number">10</span>)</span></span><br><span class="line">              <span class="list">(<span class="keyword">.setMaxPoolSize</span> <span class="number">200</span>)</span></span><br><span class="line"></span><br><span class="line">              <span class="list">(<span class="keyword">.setMaxConnectionAge</span>  <span class="number">3600</span>)</span> <span class="comment">; 1 hour</span></span><br><span class="line">              <span class="list">(<span class="keyword">.setMaxIdleTime</span> <span class="number">1800</span>)</span>       <span class="comment">; 1/2 hour</span></span><br><span class="line">              <span class="list">(<span class="keyword">.setMaxIdleTimeExcessConnections</span> <span class="number">120</span>)</span></span><br><span class="line"></span><br><span class="line">              <span class="list">(<span class="keyword">.setTestConnectionOnCheckin</span> <span class="literal">false</span>)</span></span><br><span class="line">              <span class="list">(<span class="keyword">.setTestConnectionOnCheckout</span> <span class="literal">false</span>)</span></span><br><span class="line">              <span class="list">(<span class="keyword">.setIdleConnectionTestPeriod</span> <span class="number">600</span>)</span>)</span>)</span></span><br></pre></td></tr></table></figure>
+<h3 id="使用">使用</h3><figure class="highlight nimrod"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">(defn topic-fetch-all</span><br><span class="line">  []</span><br><span class="line">  (<span class="keyword">with</span>-open [conn (jdbc/connection dbpool)]</span><br><span class="line">    (<span class="keyword">let</span> [<span class="literal">result</span> (jdbc/fetch conn <span class="string">"select @@version"</span>)]</span><br><span class="line">	  (first <span class="literal">result</span>))))</span><br></pre></td></tr></table></figure>
+<p>END.</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;luminus 的 db 操作工具不太好用，所以换成了 funcool 的 jdbc 和 c3p0。&lt;/p&gt;
+&lt;h3 id=&quot;增加依赖&quot;&gt;增加依赖&lt;/h3&gt;&lt;figure class=&quot;highlight clojure&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gut
+    
+    </summary>
+    
+    
+  </entry>
   
   <entry>
     <title>RabbitMQ 队列积压</title>
