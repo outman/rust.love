@@ -5,7 +5,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://rust.love/"/>
-  <updated>2017-09-21T12:05:17.000Z</updated>
+  <updated>2017-10-30T15:57:58.847Z</updated>
   <id>http://rust.love/</id>
   
   <author>
@@ -14,6 +14,30 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>reqargs lua tcp socket read timed out</title>
+    <link href="http://rust.love/2017/10/30/lua_tcp_socket_read_timed_out_reqargs/"/>
+    <id>http://rust.love/2017/10/30/lua_tcp_socket_read_timed_out_reqargs/</id>
+    <published>2017-10-30T15:57:58.847Z</published>
+    <updated>2017-10-30T15:57:58.847Z</updated>
+    
+    <content type="html"><![CDATA[<p>上传文件，因为还有其它 form 参数，所以使用了 reqargs<br>模块，发现在错误日志里出现了<br><figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2017</span>/<span class="number">10</span>/<span class="number">30</span> <span class="number">22</span>:<span class="number">29</span>:<span class="number">42</span> [<span class="built_in">error</span>] <span class="number">15189</span>#<span class="number">0</span>: *<span class="number">641</span> lua tcp socket read timed out</span><br></pre></td></tr></table></figure></p>
+<p>导致这个问题原因有很多，可以搜索下 nginx 相关的一些设置，在调整了 nginx<br>一些相关的 timeout 参数无果后，去翻了一下 reqargs<br>的代码，原来是在读取上传文件的时候超时了，而 reqargs 是有 timeout<br>设置的，只是我没有在文档里看到，详细代码如下：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">elseif</span> sub(ct, <span class="number">1</span>, <span class="number">19</span>) == <span class="string">"multipart/form-data"</span> <span class="keyword">then</span></span><br><span class="line">    <span class="keyword">local</span> tmpdr = options.tmp_dir <span class="keyword">or</span> defaults.tmp_dir</span><br><span class="line">    <span class="keyword">if</span> tmpdr <span class="keyword">and</span> sub(tmpdr, -<span class="number">1</span>) ~= sep <span class="keyword">then</span></span><br><span class="line">        tmpdr = tmpdr .. sep</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">local</span> maxfz = options.max_file_size    <span class="keyword">or</span> defaults.max_file_size</span><br><span class="line">    <span class="keyword">local</span> maxfs = options.max_file_uploads <span class="keyword">or</span> defaults.max_file_uploads</span><br><span class="line">    <span class="keyword">local</span> chunk = options.chunk_size       <span class="keyword">or</span> defaults.chunk_size</span><br><span class="line">    <span class="keyword">local</span> form, e = upload:new(chunk, options.max_line_size <span class="keyword">or</span> defaults.max_line_size)</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> form <span class="keyword">then</span> <span class="keyword">return</span> <span class="keyword">nil</span>, e <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">local</span> h, p, f, o, s</span><br><span class="line">    <span class="keyword">local</span> u = <span class="number">0</span></span><br><span class="line">    form:set_timeout(options.timeout <span class="keyword">or</span> defaults.timeout)</span><br></pre></td></tr></table></figure>
+<p>这个 timeoutm 如果不设置，默认就是 1000，主要是在模块初始化的时候设置</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">local</span> get, post, files = <span class="built_in">require</span> <span class="string">"reqargs"</span>(&#123;timeout = <span class="number">3600</span>&#125;)</span><br></pre></td></tr></table></figure>
+<p>改为 3600 后，问题消失。</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;上传文件，因为还有其它 form 参数，所以使用了 reqargs&lt;br&gt;模块，发现在错误日志里出现了&lt;br&gt;&lt;figure class=&quot;highlight lua&quot;&gt;&lt;table&gt;&lt;tr&gt;&lt;td class=&quot;gutter&quot;&gt;&lt;pre&gt;&lt;span class=&quot;line
+    
+    </summary>
+    
+    
+  </entry>
   
   <entry>
     <title>Laravel 中 Event 的执行流程</title>
