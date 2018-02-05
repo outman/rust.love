@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>MySQL5.6 部分特性介绍 | Rust.Love</title>
+<meta name="generator" content="Jekyll v3.7.2" />
+<meta property="og:title" content="MySQL5.6 部分特性介绍" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Memcached" />
+<meta property="og:description" content="Memcached" />
+<link rel="canonical" href="http://localhost:4000/2015/12/22/mysql-56-some-feature.html" />
+<meta property="og:url" content="http://localhost:4000/2015/12/22/mysql-56-some-feature.html" />
+<meta property="og:site_name" content="Rust.Love" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2015-12-22T17:25:00+08:00" />
+<script type="application/ld+json">
+{"dateModified":"2015-12-22T17:25:00+08:00","datePublished":"2015-12-22T17:25:00+08:00","headline":"MySQL5.6 部分特性介绍","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2015/12/22/mysql-56-some-feature.html"},"description":"Memcached","@type":"BlogPosting","url":"http://localhost:4000/2015/12/22/mysql-56-some-feature.html","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Rust.Love" />
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" rel="author" href="/">Rust.Love</a>
+
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">MySQL5.6 部分特性介绍</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2015-12-22T17:25:00+08:00" itemprop="datePublished">
+        
+        Dec 22, 2015
+      </time>
+      </p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h3 id="memcached">Memcached</h3>
+
+<p>登陆 MySQL 查看插件目录，安装对应的配置数据表</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql -hlocalhost -uroot -p
+mysql &gt; SELECT @@plugin_dir; // 查看插件目录
+
+// 导入 memcache 相关的表
+mysql &gt; SOURCE /usr/local/mysql/share/innodb_memcached_config.sql
+Query OK, 1 row affected (0.00 sec)
+
+Database changed
+Query OK, 0 rows affected (0.02 sec)
+
+
+// 多了一个 innodb_memcache 库
+mysql&gt; show databases;
++------------------------+
+| Database               |
++------------------------+
+| information_schema     |
+| innodb_memcache        |
+| test                   |
++------------------------+
+……
+</code></pre></div></div>
+
+<p>激活和卸载插件</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; INSTALL PLUGIN daemon_memcached soname "libmemcached.so";  //  激活插件
+mysql&gt; UNINSTALL PLUGIN daemon_memcached; // 卸载插件
+</code></pre></div></div>
+
+<p>通过 MySQL 查看配置信息</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>myssql&gt; SHOW VARIABLES LIKE '%memcached%';
+
+daemon_memcached_enable_binlog  OFF
+daemon_memcached_engine_lib_name    innodb_engine.so
+daemon_memcached_engine_lib_path
+daemon_memcached_option
+daemon_memcached_r_batch_size   1
+daemon_memcached_w_batch_size   1
+</code></pre></div></div>
+
+<p>查看 Memcached</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>shell &gt; telnet localhost 11211
+stats
+
+Trying ::1...
+Connected to localhost.
+Escape character is '^]'.
+stats
+STAT pid 94
+STAT uptime 317
+STAT time 1450766105
+STAT version 5.6.27
+STAT libevent 5.6.27
+STAT pointer_size 64
+STAT rusage_user 16.726572
+STAT rusage_system 18.890886
+……
+
+</code></pre></div></div>
+
+<p>innodb_memcache 库的详细信息</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; use innodb_memcache;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; show tables;
++---------------------------+
+| Tables_in_innodb_memcache |
++---------------------------+
+| cache_policies            |
+| config_options            |
+| containers                |
++---------------------------+
+3 rows in set (0.00 sec)
+</code></pre></div></div>
+
+<p>cache_policies 缓存策略</p>
+<ul>
+  <li>innodb_only 只使用InnoDB作为数据存储</li>
+  <li>cache-only  只使用传统的Memcached引擎作为后端存储</li>
+  <li>caching     二者皆使用，如果在Memcached里找不到，就查询InnoDB</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; select * from cache_policies \G
+*************************** 1. row ***************************
+policy_name: cache_policy
+get_policy: innodb_only
+set_policy: innodb_only
+delete_policy: innodb_only
+flush_policy: innodb_only
+</code></pre></div></div>
+
+<p>config_options 配置参数</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; select * from config_options \G
+*************************** 1. row ***************************
+name: separator   // Memcached只识别单值，使用此分隔符（|）来连接多个字段的值，需要注意当值内含有`|`的时候，会带来错误，所以需要修改 separator
+value: |
+*************************** 2. row ***************************
+name: table_map_delimiter // 通过此分隔符（.）来确认表和键，如：@@table.key。
+value: .
+</code></pre></div></div>
+
+<p>如果通过 Memcached 协议来访问数据表，还需要在 containers 表里做一些配置 <code class="highlighter-rouge">demo_test</code> 是开始 SOURCE 导入 <code class="highlighter-rouge">innodb_memcached_config.sql</code> 文件的时候生成的。</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; SELECT * FROM containers\G
+*************************** 1. row ***************************
+name: aaa
+db_schema: test
+db_table: demo_test
+key_columns: c1
+value_columns: c2
+flags: c3
+cas_column: c4
+expire_time_column: c5
+unique_idx_name_on_key: PRIMARY
+</code></pre></div></div>
+
+<p>查看 demo_test 表结构</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; DESC test.demo_test;
++-------+---------------------+------+-----+---------+-------+
+| Field | Type                | Null | Key | Default | Extra |
++-------+---------------------+------+-----+---------+-------+
+| c1    | varchar(32)         | NO   | PRI |         |       |
+| c2    | varchar(1024)       | YES  |     | NULL    |       |
+| c3    | int(11)             | YES  |     | NULL    |       |
+| c4    | bigint(20) unsigned | YES  |     | NULL    |       |
+| c5    | int(11)             | YES  |     | NULL    |       |
++-------+---------------------+------+-----+---------+-------+
+5 rows in set (0.01 sec)
+
+mysql&gt; select * from test.demo_test;
++----+--------------+------+------+------+
+| c1 | c2           | c3   | c4   | c5   |
++----+--------------+------+------+------+
+| AA | HELLO, HELLO |    8 |    0 |    0 |
++----+--------------+------+------+------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>通过 Memcached 协议获得数据</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>shell&gt; telnet localhost 11211
+Trying ::1...
+Connected to localhost.
+Escape character is '^]'.
+get @@aaa.AA   // aaa 就是 containers 表的 name 字段的值，相当于 `db_schema.db_table`
+VALUE @@aaa.AA 8 12 // VALUE &lt;key&gt; &lt;flags&gt; &lt;bytes&gt;
+HELLO, HELLO
+END
+</code></pre></div></div>
+
+<p>通过 php 来访问这个数据</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?php</span>
+<span class="nv">$mc</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Memcache</span><span class="p">();</span>
+<span class="nv">$mc</span><span class="o">-&gt;</span><span class="na">connect</span><span class="p">(</span><span class="s1">'127.0.0.1'</span><span class="p">,</span> <span class="mi">11211</span><span class="p">);</span>
+<span class="nb">var_dump</span><span class="p">(</span><span class="nv">$mc</span><span class="o">-&gt;</span><span class="na">get</span><span class="p">(</span><span class="s1">'@@aaa.AA'</span><span class="p">));</span>  <span class="c1">// 这里需要注意如果 `containers` 有多行数据的时候，需要使用表前缀 `@@name.` 如果不使用表名，那么会默认会按照表名的字母顺序，取第一个。如果 `containers` 只有一行数据 name 为 `aaa`，那么默认 `get('AA')` 也是会取 `@aaa.AA`</span>
+</code></pre></div></div>
+
+<h3 id="ddl-online">DDL online</h3>
+
+<p>修改表结构是我们开发过程中经常遇到的事情，早期 MySQL 版本在修改表结构的时候，主要采用以下方式：</p>
+<ul>
+  <li>创建临时表 <code class="highlighter-rouge">tmp</code> ，该表与原表 <code class="highlighter-rouge">table</code> 相似</li>
+  <li>将<code class="highlighter-rouge">table</code>数据复制到 <code class="highlighter-rouge">tmp</code>，</li>
+  <li>删除原有表 <code class="highlighter-rouge">table</code></li>
+  <li>rename tmp to table
+如果数据量非常大的情况下，整个表被加共享锁，基本就不能提供服务了。</li>
+</ul>
+
+<p>在 MySQL5.6 中，这个操作有了改善，在 <code class="highlighter-rouge">ALERT TABLE</code> 语法上，增加了 <code class="highlighter-rouge">| ALGORITHM [=] {DEFAULT|INPLACE|COPY}</code> 选项，如果没有指定 <code class="highlighter-rouge">ALGORITHM</code> ，MySQL 会根据支持的算法，自动选择，而 <code class="highlighter-rouge">INPLACE</code> 会优先被选择，这样就可以在修改表的时候依然可以提供服务。有些 Online DDL 是不支持的，有些是有依赖条件的，MySQL 官方明确的列出了一个表格 <a href="https://dev.mysql.com/doc/refman/5.6/en/innodb-create-index-overview.html">Online DDL 操作总结</a></p>
+
+<h3 id="mysql-复制的新特性">MySQL 复制的新特性</h3>
+
+<ul>
+  <li>
+    <p>多线程复制 由于数据库的主从架构，以前的MySQL版本主库多线程写入，为了保证<code class="highlighter-rouge">顺序</code>从库是单线程读取，现在的多线程复制是为每个数据库开启了一个单独的线程（sql thread），所以如果要使用多线程复制特性，需要把库拆分成多个，如果还是一个数据库，那么这个多线程复制特性无效。</p>
+  </li>
+  <li>
+    <p>GTID 全局事务ID（global transaction identifier），GTID 是事务提交时创建分配的唯一标识符，所有事务均与 GTID 一一映射。以前如果主从复制断了，需要人工去找到断点，重新开始，而 GTID 的引入可以自动寻找同步点，自动完成复制，不需要人工干预。</p>
+  </li>
+  <li>基于 Row 复制只保存改变的列，降低硬盘、网络、内存等消耗。</li>
+  <li>支持把 Master 和 Slave 的相关信息记录在表中，原来是记录在文件里，记录在表里，增强可用性。</li>
+  <li>支持延时复制。</li>
+</ul>
+
+<p>GTID 的格式类似 server_uuid:id</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mysql&gt; select @@server_uuid;
++--------------------------------------+
+| @@server_uuid                        |
++--------------------------------------+
+| fbf78286-701a-11e5-a88b-5b1557785233 |
++--------------------------------------+
+1 row in set (0.00 sec)
+</code></pre></div></div>
+
+<p>该数据被写在 <code class="highlighter-rouge">DATADIR (/usr/local/mysql/data/auto.cnf)</code> 文件中，第一次启动的时候由 <code class="highlighter-rouge">generate_server_uuid</code> 函数生成。
+id 是事务编号， server_uuid:id 共同组成了事务的唯一 ID，用来标示一个事务。
+GTID 复制有着严格的限制，GTID 实例和非 GTID 实例是不能进行复制的。
+<a href="http://dev.mysql.com/doc/refman/5.6/en/replication-gtids.html">GTID 官方文档</a> , <a href="http://mysql.taobao.org/index.php?title=MySQL%E5%86%85%E6%A0%B8%E6%9C%88%E6%8A%A5_2014.09&amp;oldid=848">MySQL 内核月报参考</a></p>
+
+
+  </div>
+
+  
+
+  <a class="u-url" href="/2015/12/22/mysql-56-some-feature.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+    <footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Rust.Love</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            
+              Rust.Love
+            
+            </li>
+            
+            <li><a class="u-email" href="mailto:pochonleeATgmail.com">pochonleeATgmail.com</a></li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+  
+  
+  
+  <li><a href="https://github.com/outman"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">outman</span></a></li>
+  
+  
+  
+  <li><a href="https://www.twitter.com/pochonlee"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">pochonlee</span></a></li>
+  
+  
+  
+</ul>
+
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Freedom &amp; Responsibility.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

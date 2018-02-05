@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>基于 Redis 的延时队列设计与实现（一周学习报-第1期） | Rust.Love</title>
+<meta name="generator" content="Jekyll v3.7.2" />
+<meta property="og:title" content="基于 Redis 的延时队列设计与实现（一周学习报-第1期）" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="本期目标 了解延时队列的工作原理 自己可以通过现有的工具软件来实现延时队列服务" />
+<meta property="og:description" content="本期目标 了解延时队列的工作原理 自己可以通过现有的工具软件来实现延时队列服务" />
+<link rel="canonical" href="http://localhost:4000/2018/02/04/study_weekly_01.html" />
+<meta property="og:url" content="http://localhost:4000/2018/02/04/study_weekly_01.html" />
+<meta property="og:site_name" content="Rust.Love" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-02-04T22:46:45+08:00" />
+<script type="application/ld+json">
+{"dateModified":"2018-02-04T22:46:45+08:00","datePublished":"2018-02-04T22:46:45+08:00","headline":"基于 Redis 的延时队列设计与实现（一周学习报-第1期）","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2018/02/04/study_weekly_01.html"},"description":"本期目标 了解延时队列的工作原理 自己可以通过现有的工具软件来实现延时队列服务","@type":"BlogPosting","url":"http://localhost:4000/2018/02/04/study_weekly_01.html","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Rust.Love" />
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" rel="author" href="/">Rust.Love</a>
+
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">基于 Redis 的延时队列设计与实现（一周学习报-第1期）</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-02-04T22:46:45+08:00" itemprop="datePublished">
+        
+        Feb 4, 2018
+      </time>
+      </p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h3 id="本期目标">本期目标</h3>
+<ul>
+  <li>了解延时队列的工作原理</li>
+  <li>自己可以通过现有的工具软件来实现延时队列服务</li>
+</ul>
+
+<h3 id="延时队列应用场景">延时队列应用场景</h3>
+
+<p>延时队列有很多应用场景，简单来说需要在未来某个特定时间去执行的任务，都可以采用延时队列。例如：</p>
+
+<ul>
+  <li>下订单后 30 分钟未支付的释放订单。</li>
+  <li>用户完成某个功能后，N 天推送个消息。</li>
+  <li>当前我们的使用场景就属于用户被商家处理后，需要 2 天后给用户反馈消息。</li>
+  <li>……</li>
+</ul>
+
+<p>上面提到的这些场景如果不用延时队列都是可以处理的，例如轮训 DB 等，如果采用了延时队列会有更好的效果，除了以上的应用场景，还有很多，可以自己探索。</p>
+
+<h3 id="为什么要基于-redis-去设计一个延时队列">为什么要基于 Redis 去设计一个延时队列</h3>
+
+<p>已经很有一些不错的延时队列产品。例如 BeansTalk，但是我们这里只为教学目的，所以自己设计一套，基于 PHP 和 Redis 的代码简单，通过自己设计这个过程，可以增强一些概念和了解原理。</p>
+
+<h3 id="使用-rabbitmq-死信方式存在的问题">使用 RabbitMQ 死信方式存在的问题</h3>
+<ul>
+  <li>同一个队列内，数据延时时间不固定，会有阻塞问题。</li>
+</ul>
+
+<h3 id="涉及的名词解释">涉及的名词解释</h3>
+
+<ul>
+  <li>Queue 就是正常的队列</li>
+  <li>enqueue 入队</li>
+  <li>dequeue 出对</li>
+  <li>Buckt 延时队列数据的存储器</li>
+  <li>Scanner 扫描 Bucket，寻找符合条件的数据</li>
+</ul>
+
+<h3 id="buckt-设计思路">Buckt 设计思路</h3>
+
+<ul>
+  <li>为每条消息生成唯一标识，ZSET 存储数据的延时排序 { value: uuid, score: delay_seconds}</li>
+  <li>Hash 存储具体对应的数据 { key : uuid, value : data}</li>
+</ul>
+
+<p>扫描 Bucket 的 ZSET 内的数据，如果 delay_seconds 满足条件，根据 uuid 取出  Hash 内数据，发送到正常队列，删除 ZSET 和 Hash 内的元素。</p>
+
+<p>为了提高效率，降低延时，对整个服务默认分了 4 个 Bucket，每个 Bucket 对应一个进程去扫描处理。文档如下图：</p>
+
+<p><img src="/assets/images/study_weekly_01_01.jpeg" alt="数据流程和文档 01" />
+<img src="/assets/images/study_weekly_01_01.jpeg" alt="数据流程和文档 02" /></p>
+
+<p>源码地址： <a href="https://github.com/outman/dq">http://github.com/outman</a></p>
+
+
+  </div>
+
+  
+
+  <a class="u-url" href="/2018/02/04/study_weekly_01.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+    <footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Rust.Love</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            
+              Rust.Love
+            
+            </li>
+            
+            <li><a class="u-email" href="mailto:pochonleeATgmail.com">pochonleeATgmail.com</a></li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+  
+  
+  
+  <li><a href="https://github.com/outman"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">outman</span></a></li>
+  
+  
+  
+  <li><a href="https://www.twitter.com/pochonlee"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">pochonlee</span></a></li>
+  
+  
+  
+</ul>
+
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Freedom &amp; Responsibility.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

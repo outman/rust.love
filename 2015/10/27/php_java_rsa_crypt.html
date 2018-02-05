@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>php 和 java RSA 对称加密互通的问题 | Rust.Love</title>
+<meta name="generator" content="Jekyll v3.7.2" />
+<meta property="og:title" content="php 和 java RSA 对称加密互通的问题" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="java 和 php 在处理 RSA 加密的时候是有差别的，java 处理的 public/private key 文件在 php 里面是没有办法处理的，需要进行格式转换，而通过 openssl 直接生成的 public/private key 文件在 java 里面是不能直接实用的，所以如果双方互通就涉及到格式转换的问题。而往往因为不用业务之间需要这种语言上的加密转换，如果不知道这种差异，总是无法得到正确的结果。" />
+<meta property="og:description" content="java 和 php 在处理 RSA 加密的时候是有差别的，java 处理的 public/private key 文件在 php 里面是没有办法处理的，需要进行格式转换，而通过 openssl 直接生成的 public/private key 文件在 java 里面是不能直接实用的，所以如果双方互通就涉及到格式转换的问题。而往往因为不用业务之间需要这种语言上的加密转换，如果不知道这种差异，总是无法得到正确的结果。" />
+<link rel="canonical" href="http://localhost:4000/2015/10/27/php_java_rsa_crypt.html" />
+<meta property="og:url" content="http://localhost:4000/2015/10/27/php_java_rsa_crypt.html" />
+<meta property="og:site_name" content="Rust.Love" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2015-10-27T15:33:22+08:00" />
+<script type="application/ld+json">
+{"dateModified":"2015-10-27T15:33:22+08:00","datePublished":"2015-10-27T15:33:22+08:00","headline":"php 和 java RSA 对称加密互通的问题","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2015/10/27/php_java_rsa_crypt.html"},"description":"java 和 php 在处理 RSA 加密的时候是有差别的，java 处理的 public/private key 文件在 php 里面是没有办法处理的，需要进行格式转换，而通过 openssl 直接生成的 public/private key 文件在 java 里面是不能直接实用的，所以如果双方互通就涉及到格式转换的问题。而往往因为不用业务之间需要这种语言上的加密转换，如果不知道这种差异，总是无法得到正确的结果。","@type":"BlogPosting","url":"http://localhost:4000/2015/10/27/php_java_rsa_crypt.html","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Rust.Love" />
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" rel="author" href="/">Rust.Love</a>
+
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">php 和 java RSA 对称加密互通的问题</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2015-10-27T15:33:22+08:00" itemprop="datePublished">
+        
+        Oct 27, 2015
+      </time>
+      </p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>java 和 php 在处理 RSA 加密的时候是有差别的，java 处理的 public/private key 文件在 php 里面是没有办法处理的，需要进行格式转换，而通过 openssl 直接生成的 public/private key 文件在 java 里面是不能直接实用的，所以如果双方互通就涉及到格式转换的问题。而往往因为不用业务之间需要这种语言上的加密转换，如果不知道这种差异，总是无法得到正确的结果。</p>
+
+<p>一般通过两个函数就可以判断你的 key 格式是否是你可以处理的:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">openssl_pkey_get_public</span>
+<span class="nb">openssl_pkey_get_private</span>
+</code></pre></div></div>
+
+<p>如果这两个函数返回的是 false ，则你的 key 格式就是 php 处理不了的。</p>
+
+<p>举个例子：某平台的接口发给你了一个 public key ，你通过 public key 对数据进行加密传输到该平台，该平台通过 private key 对你传输的数据进行解密，而对方平台用的是 java 语言，刚好给你的 public key 格式也是 java 可以处理的，而你方的编程语言为 php ，此时就需要处理，代码如下：</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">RsaCrypt</span> <span class="p">{</span>
+
+<span class="sd">/**
+* encrypt with public key
+* @param $data;
+* @param $rsakeypath
+*/</span>
+<span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">encryptPublic</span><span class="p">(</span><span class="nv">$data</span><span class="p">,</span> <span class="nv">$rsakeypath</span><span class="p">)</span> <span class="p">{</span>
+<span class="nv">$content</span> <span class="o">=</span> <span class="nx">self</span><span class="o">::</span><span class="na">getContent</span><span class="p">(</span><span class="nv">$rsakeypath</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$content</span><span class="p">)</span> <span class="p">{</span>
+<span class="nv">$pem</span> <span class="o">=</span> <span class="nx">self</span><span class="o">::</span><span class="na">transJavaRsaKeyToPhpOpenSSL</span><span class="p">(</span><span class="nv">$content</span><span class="p">);</span>
+<span class="nv">$pem</span> <span class="o">=</span> <span class="nx">self</span><span class="o">::</span><span class="na">appendFlags</span><span class="p">(</span><span class="nv">$pem</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+<span class="nv">$res</span> <span class="o">=</span> <span class="nb">openssl_pkey_get_public</span><span class="p">(</span><span class="nv">$pem</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$res</span><span class="p">)</span> <span class="p">{</span>
+<span class="nv">$opt</span> <span class="o">=</span> <span class="nb">openssl_public_encrypt</span><span class="p">(</span><span class="nv">$data</span><span class="p">,</span> <span class="nv">$result</span><span class="p">,</span> <span class="nv">$res</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$opt</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">return</span> <span class="nv">$result</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">}</span>
+<span class="p">}</span>
+<span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="sd">/**
+* decrypt with private key
+* @param $data
+* @param $rsakeypath
+*/</span>
+<span class="k">public</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">decryptPrivate</span><span class="p">(</span><span class="nv">$data</span><span class="p">,</span> <span class="nv">$rsakeypath</span><span class="p">)</span> <span class="p">{</span>
+<span class="nv">$content</span> <span class="o">=</span> <span class="nx">self</span><span class="o">::</span><span class="na">getContent</span><span class="p">(</span><span class="nv">$rsakeypath</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$content</span><span class="p">)</span> <span class="p">{</span>
+<span class="nv">$pem</span> <span class="o">=</span> <span class="nx">self</span><span class="o">::</span><span class="na">transJavaRsaKeyToPhpOpenSSL</span><span class="p">(</span><span class="nv">$content</span><span class="p">);</span>
+<span class="nv">$pem</span> <span class="o">=</span> <span class="nx">self</span><span class="o">::</span><span class="na">appendFlags</span><span class="p">(</span><span class="nv">$pem</span><span class="p">,</span> <span class="kc">false</span><span class="p">);</span>
+<span class="nv">$res</span> <span class="o">=</span> <span class="nb">openssl_pkey_get_private</span><span class="p">(</span><span class="nv">$pem</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$res</span><span class="p">)</span> <span class="p">{</span>
+<span class="nv">$opt</span> <span class="o">=</span> <span class="nb">openssl_private_decrypt</span><span class="p">(</span><span class="nv">$data</span><span class="p">,</span> <span class="nv">$result</span><span class="p">,</span> <span class="nv">$res</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$opt</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">return</span> <span class="nv">$result</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">}</span>
+<span class="p">}</span>
+<span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="sd">/**
+* get content forom file
+* @param $filepath
+* @return $content
+*/</span>
+<span class="k">private</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">getContent</span><span class="p">(</span><span class="nv">$filepath</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">if</span> <span class="p">(</span><span class="nb">is_file</span><span class="p">(</span><span class="nv">$filepath</span><span class="p">))</span> <span class="p">{</span>
+<span class="nv">$content</span> <span class="o">=</span> <span class="nb">file_get_contents</span><span class="p">(</span><span class="nv">$filepath</span><span class="p">);</span>
+<span class="k">return</span> <span class="nb">strtr</span><span class="p">(</span><span class="nv">$content</span><span class="p">,</span> <span class="k">array</span><span class="p">(</span>
+<span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span> <span class="o">=&gt;</span> <span class="s2">""</span><span class="p">,</span>
+<span class="s2">"</span><span class="se">\r</span><span class="s2">"</span> <span class="o">=&gt;</span> <span class="s2">""</span><span class="p">,</span>
+<span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="o">=&gt;</span> <span class="s2">""</span><span class="p">,</span>
+<span class="p">));</span>
+<span class="p">}</span>
+<span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="sd">/**
+* trans java's rsa key format to php openssl can read
+* @param $content
+* @return string
+*/</span>
+<span class="k">private</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">transJavaRsaKeyToPhpOpenSSL</span><span class="p">(</span><span class="nv">$content</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$content</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">return</span> <span class="nb">trim</span><span class="p">(</span><span class="nb">chunk_split</span><span class="p">(</span><span class="nv">$content</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">));</span>
+<span class="p">}</span>
+<span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="sd">/**
+* append Falgs to content
+* @param $content
+* @param $isPublic
+* @return string
+*/</span>
+<span class="k">private</span> <span class="k">static</span> <span class="k">function</span> <span class="nf">appendFlags</span><span class="p">(</span><span class="nv">$content</span><span class="p">,</span> <span class="nv">$isPublic</span> <span class="o">=</span> <span class="kc">true</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">if</span> <span class="p">(</span><span class="nv">$isPublic</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">return</span> <span class="s2">"-----BEGIN PUBLIC KEY-----</span><span class="se">\n</span><span class="s2">"</span> <span class="o">.</span> <span class="nv">$content</span> <span class="o">.</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">-----END PUBLIC KEY-----</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">else</span> <span class="p">{</span>
+<span class="k">return</span> <span class="s2">"-----BEGIN PRIVATE KEY-----</span><span class="se">\n</span><span class="s2">"</span> <span class="o">.</span> <span class="nv">$content</span> <span class="o">.</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">-----END PRIVATE KEY-----</span><span class="se">\n</span><span class="s2">"</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>上面这段代码主要完成了 public key 加密和 private key 解密两个方法。有时候我们还需要 public key 解密和 private key 加密，相关的函数在 openssl 的扩展模块都可以找到。</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">openssl_public_decrypt</span>
+<span class="nb">openssl_public_encrypt</span>
+<span class="nb">openssl_private_decrypt</span>
+<span class="nb">openssl_private_encrypt</span>
+</code></pre></div></div>
+
+  </div>
+
+  
+
+  <a class="u-url" href="/2015/10/27/php_java_rsa_crypt.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+    <footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Rust.Love</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            
+              Rust.Love
+            
+            </li>
+            
+            <li><a class="u-email" href="mailto:pochonleeATgmail.com">pochonleeATgmail.com</a></li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+  
+  
+  
+  <li><a href="https://github.com/outman"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">outman</span></a></li>
+  
+  
+  
+  <li><a href="https://www.twitter.com/pochonlee"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">pochonlee</span></a></li>
+  
+  
+  
+</ul>
+
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Freedom &amp; Responsibility.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

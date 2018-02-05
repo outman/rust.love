@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>php 在 fpm 下生成随机数研究 | Rust.Love</title>
+<meta name="generator" content="Jekyll v3.7.2" />
+<meta property="og:title" content="php 在 fpm 下生成随机数研究" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="下面这段代码，在 fpm 下，交替打开注释 [1] 和 [2] ，你会发现多次请求随机数相同的现象。 echo str_repeat(&quot;=&quot;, 100), &#39;&lt;br&gt;&#39;; echo getmypid(), &#39;&lt;br&gt;&#39;; echo str_repeat(&quot;=&quot;, 100), &#39;&lt;br&gt;&#39;; // [1] mt_srand(10); // [2] mt_srand(); for ($i = 0; $i &lt; 10; $i ++) { */ echo mt_rand(1000, 9999), &#39;&lt;br&gt;&#39;; */ }" />
+<meta property="og:description" content="下面这段代码，在 fpm 下，交替打开注释 [1] 和 [2] ，你会发现多次请求随机数相同的现象。 echo str_repeat(&quot;=&quot;, 100), &#39;&lt;br&gt;&#39;; echo getmypid(), &#39;&lt;br&gt;&#39;; echo str_repeat(&quot;=&quot;, 100), &#39;&lt;br&gt;&#39;; // [1] mt_srand(10); // [2] mt_srand(); for ($i = 0; $i &lt; 10; $i ++) { */ echo mt_rand(1000, 9999), &#39;&lt;br&gt;&#39;; */ }" />
+<link rel="canonical" href="http://localhost:4000/2015/11/18/php_mt_rand_numbers.html" />
+<meta property="og:url" content="http://localhost:4000/2015/11/18/php_mt_rand_numbers.html" />
+<meta property="og:site_name" content="Rust.Love" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2015-11-18T15:49:13+08:00" />
+<script type="application/ld+json">
+{"dateModified":"2015-11-18T15:49:13+08:00","datePublished":"2015-11-18T15:49:13+08:00","headline":"php 在 fpm 下生成随机数研究","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2015/11/18/php_mt_rand_numbers.html"},"description":"下面这段代码，在 fpm 下，交替打开注释 [1] 和 [2] ，你会发现多次请求随机数相同的现象。 echo str_repeat(&quot;=&quot;, 100), &#39;&lt;br&gt;&#39;; echo getmypid(), &#39;&lt;br&gt;&#39;; echo str_repeat(&quot;=&quot;, 100), &#39;&lt;br&gt;&#39;; // [1] mt_srand(10); // [2] mt_srand(); for ($i = 0; $i &lt; 10; $i ++) { */ echo mt_rand(1000, 9999), &#39;&lt;br&gt;&#39;; */ }","@type":"BlogPosting","url":"http://localhost:4000/2015/11/18/php_mt_rand_numbers.html","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Rust.Love" />
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" rel="author" href="/">Rust.Love</a>
+
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">php 在 fpm 下生成随机数研究</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2015-11-18T15:49:13+08:00" itemprop="datePublished">
+        
+        Nov 18, 2015
+      </time>
+      </p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>下面这段代码，在 fpm 下，交替打开注释 [1] 和 [2] ，你会发现多次请求随机数相同的现象。</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo str_repeat("=", 100), '&lt;br&gt;';
+echo getmypid(), '&lt;br&gt;';
+echo str_repeat("=", 100), '&lt;br&gt;';
+// [1] mt_srand(10);
+// [2] mt_srand();
+for ($i = 0; $i &lt; 10; $i ++) { */
+echo mt_rand(1000, 9999), '&lt;br&gt;'; */
+}
+</code></pre></div></div>
+
+<p>带着这个疑问，我探寻了一下源代码，最后大体上整理了一个源码的流程出来</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#define N             MT_N                 /* length of state vector MT_N = 624*/
+#define M             (397)                /* a period parameter */
+#define hiBit(u)      ((u) &amp; 0x80000000U)  /* mask all but highest   bit of u */
+#define loBit(u)      ((u) &amp; 0x00000001U)  /* mask all but lowest    bit of u */
+#define loBits(u)     ((u) &amp; 0x7FFFFFFFU)  /* mask     the highest   bit of u */
+#define mixBits(u, v) (hiBit(u)|loBits(v)) /* move hi bit of u to hi bit of v */
+
+#define twist(m,u,v)  (m ^ (mixBits(u,v)&gt;&gt;1) ^ ((php_uint32)(-(php_int32)(loBit(u))) &amp; 0x9908b0dfU))
+
+PHP_FUNCTION(mt_rand) {
+......
+
+if (!BG(mt_rand_is_seeded)) {
+php_mt_srand(GENERATE_SEED() TSRMLS_CC);
+}
+......
+}
+
+
+PHP_FUNCTION(mt_srand)
+{
+long seed = 0;
+
+if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|l", &amp;seed) == FAILURE)
+return;
+
+if (ZEND_NUM_ARGS() == 0)
+seed = GENERATE_SEED();
+
+php_mt_srand(seed TSRMLS_CC);
+}
+
+
+PHPAPI void php_mt_srand(php_uint32 seed TSRMLS_DC)
+{
+/* Seed the generator with a simple uint32 */
+php_mt_initialize(seed, BG(state));
+php_mt_reload(TSRMLS_C);
+
+/* Seed only once */
+BG(mt_rand_is_seeded) = 1;
+}
+
+static inline void php_mt_initialize(php_uint32 seed, php_uint32 *state)
+{
+/* Initialize generator state with seed
+See Knuth TAOCP Vol 2, 3rd Ed, p.106 for multiplier.
+In previous versions, most significant bits (MSBs) of the seed affect
+only MSBs of the state array.  Modified 9 Jan 2002 by Makoto Matsumoto. */
+
+register php_uint32 *s = state;
+register php_uint32 *r = state;
+register int i = 1;
+
+*s++ = seed &amp; 0xffffffffU;
+for( ; i &lt; N; ++i ) {
+*s++ = ( 1812433253U * ( *r ^ (*r &gt;&gt; 30) ) + i ) &amp; 0xffffffffU;
+r++;
+}
+}
+
+
+static inline void php_mt_reload(TSRMLS_D)
+{
+/* Generate N new values in state
+Made clearer and faster by Matthew Bellew (matthew.bellew@home.com) */
+
+register php_uint32 *state = BG(state);
+register php_uint32 *p = state;
+register int i;
+
+for (i = N - M; i--; ++p)
+*p = twist(p[M], p[0], p[1]);
+for (i = M; --i; ++p)
+*p = twist(p[M-N], p[0], p[1]);
+*p = twist(p[M-N], p[0], state[0]);
+BG(left) = N;
+BG(next) = state;
+}
+</code></pre></div></div>
+
+<p>通过代码可以看出， <code class="highlighter-rouge">mt_rand</code> 和 <code class="highlighter-rouge">mt_srand</code> 其实没有明显的差别，无非是 <code class="highlighter-rouge">seed</code> 的处理上有一些差别。而存储随机数相关的数据结构在一个叫 <code class="highlighter-rouge">_php_basic_globals</code> 的结构体里，代码如下（摘抄了部分）：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/* rand.c */
+php_uint32   state[MT_N+1];  /* state vector + 1 extra to not violate ANSI C */
+php_uint32   *next;       /* next random value is computed from here */
+int      left;        /* can *next++ this many times before reloading */
+
+unsigned int rand_seed; /* Seed for rand(), in ts version */
+
+zend_bool rand_is_seeded; /* Whether rand() has been seeded */
+zend_bool mt_rand_is_seeded; /* Whether mt_rand() has been seeded */
+</code></pre></div></div>
+<p>通过上面的结构体，我们看到了一些状态等信息，上面的这些代码主要展示了生成随机数的一些关键环节。下面我们说一说产生随机数不随机相关情况：</p>
+
+<ol>
+  <li>先全部重启 php-fpm</li>
+  <li>
+    <p>第一个实验，在调用 mt_rand(1000, 9999) 之前，调用 mt_srand(10)，此时所有请求的随机数相同，这个没有问题。</p>
+  </li>
+  <li>去掉 mt_srand(10)，如果你fpm fork 了3个进程，那么根据pid查看这三个进程的随机数都是相同的，这三个进程执行一轮以后，就会生成新的随机数。</li>
+  <li>把 mt_srand(10) 换成 mt_srand() 恢复了正确的随机数</li>
+  <li>再进行第1步操作后，只调用 mt_rand(1000, 9999) 一切正常</li>
+</ol>
+
+<p>那么为什么 mt_srand(seed) 以后，就出现不随机的状况了呢？
+因为fork出来的进程，当我们mt_srand(seed) 以后，进程所共享的 seed 是一样的，所以不同进程生成的随机数才是一样的。而 mt_srand() 这种调用，系统是根据GENERATE_SEED()来生成的seed，这个seed是包含了一些pid等其他信息，所以每个进程的seed是不同的，最后生成的随机数也是不同的。
+下面是 GENERATE_SEED() 的定义：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#ifdef PHP_WIN32
+#define GENERATE_SEED() (((long) (time(0) * GetCurrentProcessId())) ^ ((long) (1000000.0 * php_combined_lcg(TSRMLS_C))))
+#else
+#define GENERATE_SEED() (((long) (time(0) * getpid())) ^ ((long) (1000000.0 * php_combined_lcg(TSRMLS_C))))
+#endif
+</code></pre></div></div>
+
+<p>最后的代码是一个简单的扩展函数，输出执行<code class="highlighter-rouge">test_mt_rand</code>过程中内核的一些相关数据，php版本5.5.30</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PHP_FUNCTION(test_mt_rand)
+{
+long min;
+long max;
+long number;
+int  argc = ZEND_NUM_ARGS();
+
+if (argc != 0) {
+if (zend_parse_parameters(argc TSRMLS_CC, "ll", &amp;min, &amp;max) == FAILURE) {
+return;
+} else if (max &lt; min) {
+php_error_docref(NULL TSRMLS_CC, E_WARNING, "max(%ld) is smaller than min(%ld)", max, min);
+RETURN_FALSE;
+}
+}
+
+zval *opt_array;
+MAKE_STD_ZVAL(opt_array);
+array_init(opt_array);
+add_assoc_long(opt_array, "MIN", min);
+add_assoc_long(opt_array, "MAX", max);
+add_assoc_long(opt_array, "NUMBER0", number);
+add_assoc_long(opt_array, "BG_SEEDED", BG(mt_rand_is_seeded));
+add_assoc_long(opt_array, "GEN_SEED", GENERATE_SEED());
+
+if (!BG(mt_rand_is_seeded)) {
+php_mt_srand(GENERATE_SEED() TSRMLS_CC);
+}
+
+/*
+* Melo: hmms.. randomMT() returns 32 random bits...
+* Yet, the previous php_rand only returns 31 at most.
+* So I put a right shift to loose the lsb. It *seems*
+* better than clearing the msb.
+* Update:
+* I talked with Cokus via email and it won't ruin the algorithm
+*/
+
+int index = 0;
+php_uint32 *st= BG(state);
+
+zval *subArr;
+MAKE_STD_ZVAL(subArr);
+array_init(subArr);
+for (index = 0; index &lt; MT_N; index ++) {
+add_index_long(subArr, index, *st++);
+}
+add_assoc_zval(opt_array, "state1", subArr);
+
+add_assoc_long(opt_array, "BG(next)", *BG(next));
+number = (long) (php_mt_rand(TSRMLS_C) &gt;&gt; 1);
+
+php_uint32 *st1 = BG(state);
+zval *subArr1;
+MAKE_STD_ZVAL(subArr1);
+array_init(subArr1);
+for (index = 0; index &lt; MT_N; index ++) {
+add_index_long(subArr1, index, *st1 ++);
+}
+add_assoc_zval(opt_array, "state2", subArr1);
+
+add_assoc_long(opt_array, "NUMBER_php_mt_rand", number);
+if (argc == 2) {
+RAND_RANGE(number, min, max, PHP_MT_RAND_MAX);
+add_assoc_long(opt_array, "PHP_MT_RAND_MAX", PHP_MT_RAND_MAX);
+add_assoc_long(opt_array, "RETURN", number);
+}
+add_assoc_long(opt_array, "SEED", BG(rand_seed));
+add_assoc_long(opt_array, "LEFT", BG(left));
+RETURN_ZVAL(opt_array, 1, 0);
+}
+</code></pre></div></div>
+
+  </div>
+
+  
+
+  <a class="u-url" href="/2015/11/18/php_mt_rand_numbers.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+    <footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Rust.Love</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            
+              Rust.Love
+            
+            </li>
+            
+            <li><a class="u-email" href="mailto:pochonleeATgmail.com">pochonleeATgmail.com</a></li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+  
+  
+  
+  <li><a href="https://github.com/outman"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">outman</span></a></li>
+  
+  
+  
+  <li><a href="https://www.twitter.com/pochonlee"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">pochonlee</span></a></li>
+  
+  
+  
+</ul>
+
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Freedom &amp; Responsibility.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
