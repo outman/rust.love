@@ -1,4 +1,92 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.2">Jekyll</generator><link href="http://rust.love/feed.xml" rel="self" type="application/atom+xml" /><link href="http://rust.love/" rel="alternate" type="text/html" /><updated>2018-02-08T16:38:11+08:00</updated><id>http://rust.love/</id><title type="html">Rust.Love</title><subtitle>Freedom &amp; Responsibility.</subtitle><entry><title type="html">基于 Redis 的延时队列设计与实现（一周学习报-第1期）</title><link href="http://rust.love/2018/02/04/study_weekly_01.html" rel="alternate" type="text/html" title="基于 Redis 的延时队列设计与实现（一周学习报-第1期）" /><published>2018-02-04T22:46:45+08:00</published><updated>2018-02-04T22:46:45+08:00</updated><id>http://rust.love/2018/02/04/study_weekly_01</id><content type="html" xml:base="http://rust.love/2018/02/04/study_weekly_01.html">&lt;h3 id=&quot;本期目标&quot;&gt;本期目标&lt;/h3&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.2">Jekyll</generator><link href="http://rust.love/feed.xml" rel="self" type="application/atom+xml" /><link href="http://rust.love/" rel="alternate" type="text/html" /><updated>2018-02-21T15:32:18+08:00</updated><id>http://rust.love/</id><title type="html">Rust.Love</title><subtitle>Freedom &amp; Responsibility.</subtitle><entry><title type="html">架构拆解之什么是 CDC（一周学习报-第2期）</title><link href="http://rust.love/cdc/mysql/arch/2018/02/09/cdc.html" rel="alternate" type="text/html" title="架构拆解之什么是 CDC（一周学习报-第2期）" /><published>2018-02-09T00:00:00+08:00</published><updated>2018-02-09T00:00:00+08:00</updated><id>http://rust.love/cdc/mysql/arch/2018/02/09/cdc</id><content type="html" xml:base="http://rust.love/cdc/mysql/arch/2018/02/09/cdc.html">&lt;h2 id=&quot;背景&quot;&gt;背景&lt;/h2&gt;
+
+&lt;p&gt;在我们的整个架构体系中，我们大量的使用了 CDC，很多同学开始不太清楚，不知道 CDC 是什么，以为 CDC 是一个具体的软件，其实 CDC 是一个统称，就像 Office 代表的是一组办公软件，而 CDC 也是各种不同名字具有 CDC 功能的软件的统称，所以简单介绍下关于 CDC 的内容。文中 CDC 主要是和数据库、MySQL 相关的内容，并不具有广泛的意义。&lt;/p&gt;
+
+&lt;h2 id=&quot;本期目标&quot;&gt;本期目标&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;了解什么是 CDC&lt;/li&gt;
+  &lt;li&gt;各种 CDC&lt;/li&gt;
+  &lt;li&gt;CDC 的一些使用场景和一些想象&lt;/li&gt;
+  &lt;li&gt;如何自己实现一个 CDC 软件&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;什么是-cdc&quot;&gt;什么是 CDC&lt;/h3&gt;
+
+&lt;p&gt;CDC 全称 Change Data Capture，下面是来自&lt;a href=&quot;https://en.wikipedia.org/wiki/Change_data_capture&quot;&gt;维基百科&lt;/a&gt;的一段说明：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;In databases, change data capture (CDC) is a set of software design patterns used to determine (and track) the data that has changed so that action can be taken using the changed data. Also, Change data capture (CDC) is an approach to data integration that is based on the identification, capture and delivery of the changes made to enterprise data sources.
+CDC solutions occur most often in data-warehouse environments since capturing and preserving the state of data across time is one of the core functions of a data warehouse, but CDC can be utilized in any database or data repository system.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;简单来说 CDC 就是记录数据变化的一个工具软件，它可以捕捉每一次的数据变化，我们使用的是阿里开源的 &lt;a href=&quot;https://github.com/alibaba/canal&quot;&gt;canal&lt;/a&gt;，看下下面的这个图（来自 canal 介绍），基本就理解 CDC 的工作原理了，更详细的可以点开 &lt;a href=&quot;https://github.com/alibaba/canal&quot;&gt;canal&lt;/a&gt; 链接，有更多的介绍。
+&lt;img src=&quot;/assets/images/canal.jpeg&quot; alt=&quot;canal 工作原理&quot; title=&quot;canal 工作原理&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;各种-cdc&quot;&gt;各种 CDC&lt;/h3&gt;
+
+&lt;p&gt;因为 CDC 软件繁多，我没有一一安装去实验，所以列举几个，供大家参考，更多的大家可以看&lt;a href=&quot;https://github.com/wushujames/mysql-cdc-projects/wiki&quot;&gt;这里&lt;/a&gt;。&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;名称&amp;amp;站点&lt;/td&gt;
+      &lt;td&gt;描述&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;https://github.com/alibaba/canal&quot;&gt;canal&lt;/a&gt;&lt;/td&gt;
+      &lt;td&gt;阿里巴巴出品，很多中文文档，比较成熟 github star &amp;gt; 4k fork &amp;gt; 1700 多，Java 语言开发，有配套工具链。&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;https://github.com/linkedin/databus&quot;&gt;databus&lt;/a&gt;&lt;/td&gt;
+      &lt;td&gt;star&amp;gt;1800,fork&amp;gt;400, 大厂出品，还是值得信赖的，Java 语言实现&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;https://github.com/JarvusInnovations/lapidus&quot;&gt;lapidus&lt;/a&gt;&lt;/td&gt;
+      &lt;td&gt;Nodejs 实现的 star 76 fork 10&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;https://github.com/mardambey/mypipe&quot;&gt;mypipe&lt;/a&gt;&lt;/td&gt;
+      &lt;td&gt;star&amp;gt;300 fork&amp;gt;50 Scala 实现的&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;https://github.com/siddontang/go-mysql-elasticsearch&quot;&gt;go-mysql-elasticsearch&lt;/a&gt;&lt;/td&gt;
+      &lt;td&gt;star &amp;gt; 1k fork &amp;gt; 250 Golang&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;https://github.com/krowinski/php-mysql-replication&quot;&gt;php-mysql-replication&lt;/a&gt;&lt;/td&gt;
+      &lt;td&gt;PHP 的，哈哈哈&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;a href=&quot;https://github.com/noplay/python-mysql-replication&quot;&gt;python-mysql-replication&lt;/a&gt;&lt;/td&gt;
+      &lt;td&gt;Python 的&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h3 id=&quot;cdc-使用场景和-cdc-在我们架构中的应用&quot;&gt;CDC 使用场景和 CDC 在我们架构中的应用&lt;/h3&gt;
+
+&lt;p&gt;CDC 的应用场景就像它的名字一样，捕捉那些变化的数据，下面简单说几个具体的例子：&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;根据我们的业务，用户报名后会有一些列的数据变化，录取、待面试、拒绝等。&lt;/li&gt;
+  &lt;li&gt;电商中的订单状态变&lt;/li&gt;
+  &lt;li&gt;数据库数据变更更新检索&lt;/li&gt;
+  &lt;li&gt;……&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;上面列觉的这几个例子，都会涉及到数据变更时，触发一些列的业务操作，直接通过应用程序代码进行异步的事件分发也是可以实现的，代码也可以做到不嵌入业务，但是多业务在共享数据的时候，也会存在一些问题，每个业务方都要去实现监听数据变化的代码。而采用 CDC 进行数据分发，是比较好的实现方式，通过 CDC 统一分发，业务方只关心业务逻辑，不用去写大量代码来做异步实现数据监听接收，下面是我理解的一个基于 CDC 和 Queue 来做的数据分发和共享平台的架构。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/cdc_queue_share_data.jpeg&quot; alt=&quot;CDC Queue Dispatcher Data&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;通过上面的这套体系，MySQL 通过 CDC 把表变化的数据分发出来，存入相应的共享队列，每个想要使用该数据的的业务方，都可以通过去订阅这份数据来完成自己的业务功能，在代码上基本是完全分离了数据采集的工作。在这里需要注意的是&lt;strong&gt;&lt;em&gt;数据是单向流向业务方的，所以在数据使用上一定要切合实际的业务功能&lt;/em&gt;&lt;/strong&gt;。&lt;/p&gt;
+
+&lt;p&gt;目前我们的架构中，只是部分使用了这样的功能，且比较零散，没有从全局上面统筹数据分发，我们应用最多的是数据库数据变化时，更新检索。&lt;/p&gt;
+
+&lt;h3 id=&quot;如何实现一个-cdc&quot;&gt;如何实现一个 CDC？&lt;/h3&gt;
+
+&lt;p&gt;MySQL 的一些 CDC 软件就是实现了 &lt;a href=&quot;https://dev.mysql.com/doc/internals/en/replication-protocol.html&quot;&gt;MySQL-replication&lt;/a&gt; 协议的 Slave 库，只是本身并不存储数据，做一些数据解析和分发功能。文中列举了各种语言的实现，并且都有链接地址，大家可以自行部署去玩了。&lt;/p&gt;
+
+&lt;p&gt;PS: 本来要自己实现一下发现有 PHP 版本了，😂，大家可以自己查看上面列出来的 PHP 的实现，一个简单的&lt;a href=&quot;https://github.com/outman/weekly/tree/master/02&quot;&gt;示例代码&lt;/a&gt;。&lt;/p&gt;</content><author><name></name></author><summary type="html">背景</summary></entry><entry><title type="html">基于 Redis 的延时队列设计与实现（一周学习报-第1期）</title><link href="http://rust.love/2018/02/04/study_weekly_01.html" rel="alternate" type="text/html" title="基于 Redis 的延时队列设计与实现（一周学习报-第1期）" /><published>2018-02-04T22:46:45+08:00</published><updated>2018-02-04T22:46:45+08:00</updated><id>http://rust.love/2018/02/04/study_weekly_01</id><content type="html" xml:base="http://rust.love/2018/02/04/study_weekly_01.html">&lt;h3 id=&quot;本期目标&quot;&gt;本期目标&lt;/h3&gt;
 &lt;ul&gt;
   &lt;li&gt;了解延时队列的工作原理&lt;/li&gt;
   &lt;li&gt;自己可以通过现有的工具软件来实现延时队列服务&lt;/li&gt;
@@ -48,7 +136,7 @@
 &lt;p&gt;为了提高效率，降低延时，对整个服务默认分了 4 个 Bucket，每个 Bucket 对应一个进程去扫描处理。文档如下图：&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;/assets/images/study_weekly_01_01.jpeg&quot; alt=&quot;数据流程和文档 01&quot; /&gt;
-&lt;img src=&quot;/assets/images/study_weekly_01_01.jpeg&quot; alt=&quot;数据流程和文档 02&quot; /&gt;&lt;/p&gt;
+&lt;img src=&quot;/assets/images/study_weekly_01_02.jpeg&quot; alt=&quot;数据流程和文档 02&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;源码地址： &lt;a href=&quot;https://github.com/outman/dq&quot;&gt;http://github.com/outman&lt;/a&gt;&lt;/p&gt;</content><author><name></name></author><summary type="html">本期目标 了解延时队列的工作原理 自己可以通过现有的工具软件来实现延时队列服务</summary></entry><entry><title type="html">reqargs lua tcp socket read timed out</title><link href="http://rust.love/2017/10/30/lua_tcp_socket_read_timed_out_reqargs.html" rel="alternate" type="text/html" title="reqargs lua tcp socket read timed out" /><published>2017-10-30T23:57:58+08:00</published><updated>2017-10-30T23:57:58+08:00</updated><id>http://rust.love/2017/10/30/lua_tcp_socket_read_timed_out_reqargs</id><content type="html" xml:base="http://rust.love/2017/10/30/lua_tcp_socket_read_timed_out_reqargs.html">&lt;p&gt;上传文件，因为还有其它 form 参数，所以使用了 reqargs
 模块，发现在错误日志里出现了&lt;/p&gt;
@@ -1119,184 +1207,4 @@ END
 &lt;p&gt;该数据被写在 &lt;code class=&quot;highlighter-rouge&quot;&gt;DATADIR (/usr/local/mysql/data/auto.cnf)&lt;/code&gt; 文件中，第一次启动的时候由 &lt;code class=&quot;highlighter-rouge&quot;&gt;generate_server_uuid&lt;/code&gt; 函数生成。
 id 是事务编号， server_uuid:id 共同组成了事务的唯一 ID，用来标示一个事务。
 GTID 复制有着严格的限制，GTID 实例和非 GTID 实例是不能进行复制的。
-&lt;a href=&quot;http://dev.mysql.com/doc/refman/5.6/en/replication-gtids.html&quot;&gt;GTID 官方文档&lt;/a&gt; , &lt;a href=&quot;http://mysql.taobao.org/index.php?title=MySQL%E5%86%85%E6%A0%B8%E6%9C%88%E6%8A%A5_2014.09&amp;amp;oldid=848&quot;&gt;MySQL 内核月报参考&lt;/a&gt;&lt;/p&gt;</content><author><name></name></author><summary type="html">Memcached</summary></entry><entry><title type="html">将 API 从 yii1 迁移到 yii2</title><link href="http://rust.love/2015/12/07/migrate_api_from_yii1_to_yii2.html" rel="alternate" type="text/html" title="将 API 从 yii1 迁移到 yii2" /><published>2015-12-07T12:16:10+08:00</published><updated>2015-12-07T12:16:10+08:00</updated><id>http://rust.love/2015/12/07/migrate_api_from_yii1_to_yii2</id><content type="html" xml:base="http://rust.love/2015/12/07/migrate_api_from_yii1_to_yii2.html">&lt;p&gt;种种历史原因，导致无法使用使用严格的 RESTful 规则, 这里只是内部项目迁移过程中给大家普及的一点点小知识，因为是内部项目，对您可能并不通用。&lt;/p&gt;
-
-&lt;h3 id=&quot;yii2-basic-项目结构&quot;&gt;Yii2 basic 项目结构&lt;/h3&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;├── codeception.yml
-├── commands
-├── components
-├── composer.json
-├── composer.lock
-├── config
-├── controllers
-├── messages
-├── models
-├── runtime
-├── service
-├── tests
-├── vendor
-├── web
-├── yii
-└── yii.bat
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;API 规范&lt;/li&gt;
-  &lt;li&gt;route&lt;/li&gt;
-  &lt;li&gt;controllers&lt;/li&gt;
-  &lt;li&gt;models&lt;/li&gt;
-  &lt;li&gt;service&lt;/li&gt;
-  &lt;li&gt;guzzlephp&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;API 简约规范
-因为历史和现行的原因，不采用严格的 RESTful 定义的标准&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;route 映射规则&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;'PUT &amp;lt;controller&amp;gt;/&amp;lt;id&amp;gt;'      =&amp;gt; '&amp;lt;controller&amp;gt;/update',
-'DELETE &amp;lt;controller&amp;gt;/&amp;lt;id&amp;gt;'   =&amp;gt; '&amp;lt;controller&amp;gt;/delete',
-'GET &amp;lt;controller&amp;gt;/&amp;lt;id&amp;gt;'      =&amp;gt; '&amp;lt;controller&amp;gt;/view',
-'POST &amp;lt;controller&amp;gt;'          =&amp;gt; '&amp;lt;controller&amp;gt;/create',
-'GET &amp;lt;controller&amp;gt;'           =&amp;gt; '&amp;lt;controller&amp;gt;/index',
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;注: URL 驼峰式命名，需要用 - 分割，例如&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;'GET pointAccount' =&amp;gt; 'point-account/index',
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;新代码尽量不要采用这种风格，应该尽量采用单个英文名词。&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;controllers 统一继承自 &lt;code class=&quot;highlighter-rouge&quot;&gt;MainController&lt;/code&gt; 需要注意的几个方法&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;beforeAction
-afterAction
-
-getRawBody  -&amp;gt; file_get_contents('php://input')
-json
-renderJson
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;models 在项目中使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;Model&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;ActiveRecord&lt;/code&gt; , 当前项目相关的父类是 &lt;code class=&quot;highlighter-rouge&quot;&gt;MainModel&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;MainActiveRecord&lt;/code&gt;&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;\app\components\ModelTrait
-Model
-ActiveRecord
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;Service 是复杂业务和公共业务逻辑的抽象，保证 Controller 简单，不同入口的相同业务统一。&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Guzzlephp 一套特别好用的 Http Client ，告别自己封装 curl。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;入参验证，有对应 db 的采用 &lt;code class=&quot;highlighter-rouge&quot;&gt;MainActiveRecord&lt;/code&gt; 为父类，无 db 对应的采用 &lt;code class=&quot;highlighter-rouge&quot;&gt;MainModel&lt;/code&gt; 为父类，通过统一的 &lt;code class=&quot;highlighter-rouge&quot;&gt;Validator&lt;/code&gt; 和自定义验证规则来做入参校验，避免写各种 &lt;code class=&quot;highlighter-rouge&quot;&gt;if else empty isset&lt;/code&gt; 等判断逻辑。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;返回值问题&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;结构统一 {“status”: integer(), “message”: string(), “data”: []}&lt;/li&gt;
-  &lt;li&gt;大小写永远保持一致&lt;/li&gt;
-  &lt;li&gt;类型明确&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;codeception-安装&quot;&gt;Codeception 安装&lt;/h3&gt;
-
-&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;composer global require &lt;span class=&quot;s2&quot;&gt;&quot;codeception/codeception=2.0.*&quot;&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;composer global require &lt;span class=&quot;s2&quot;&gt;&quot;codeception/specify=*&quot;&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;composer global require &lt;span class=&quot;s2&quot;&gt;&quot;codeception/verify=*&quot;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;composer global status
-Changed current directory to &amp;lt;directory&amp;gt;
-
-&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;PATH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;PATH&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;:/&amp;lt;directory&amp;gt;/vendor/bin&quot;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;codecept &lt;span class=&quot;nt&quot;&gt;-V&lt;/span&gt;
-Codeception version 2.0.16
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;codeception-功能介绍&quot;&gt;Codeception 功能介绍&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Acceptance Testing 验收测试 (JS Ajax)&lt;/li&gt;
-  &lt;li&gt;Functional Testing 功能测试 (No js)&lt;/li&gt;
-  &lt;li&gt;API Testing&lt;/li&gt;
-  &lt;li&gt;Unit Testing 单元测试&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;Acceptance Testing 验收测试 (JS Ajax)&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?php&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;AcceptanceTester&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$scenario&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;amOnPage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'/'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;click&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Sign Up'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;submitForm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'#signup'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;array&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
-&lt;span class=&quot;s1&quot;&gt;'username'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'MilesDavis'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-&lt;span class=&quot;s1&quot;&gt;'email'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'miles@davis.com'&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;see&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Thank you for Signing Up!'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;Functional Testing 功能测试 (No js)&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?php&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;FunctionalTester&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$scenario&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;amOnPage&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'/'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;click&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Sign Up'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;submitForm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'#signup'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;array&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
-&lt;span class=&quot;s1&quot;&gt;'username'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'MilesDavis'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-&lt;span class=&quot;s1&quot;&gt;'email'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'miles@davis.com'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;see&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Thank you for Signing Up!'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;seeEmailSent&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'miles@davis.com'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'Thank you for registration'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;seeInDatabase&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'users'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;array&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'email'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'miles@davis.com'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;API Testing&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?php&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;ApiTester&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$scenario&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;wantTo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'create a new user by API'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;amHttpAuthenticated&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'davert'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'123456'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;haveHttpHeader&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Content-Type'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'application/x-www-form-urlencoded'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;sendPOST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'/users'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;array&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'name'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'davert'&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;seeResponseCodeIs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;200&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;seeResponseIsJson&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;seeResponseContainsJson&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;array&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'result'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'ok'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;Unit Testing 单元测试&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?php&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;use&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;\Codeception\Util\Stub&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;UserTest&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;extends&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;\Codeception\TestCase\Test&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;testUserSave&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$user&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Stub&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;make&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'User'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;setName&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'davert'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$this&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;assertEquals&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'davert'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;getName&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$user&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;save&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$this&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;tester&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;seeInDatabase&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'users'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;array&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'name'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'davert'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;</content><author><name></name></author><summary type="html">种种历史原因，导致无法使用使用严格的 RESTful 规则, 这里只是内部项目迁移过程中给大家普及的一点点小知识，因为是内部项目，对您可能并不通用。</summary></entry></feed>
+&lt;a href=&quot;http://dev.mysql.com/doc/refman/5.6/en/replication-gtids.html&quot;&gt;GTID 官方文档&lt;/a&gt; , &lt;a href=&quot;http://mysql.taobao.org/index.php?title=MySQL%E5%86%85%E6%A0%B8%E6%9C%88%E6%8A%A5_2014.09&amp;amp;oldid=848&quot;&gt;MySQL 内核月报参考&lt;/a&gt;&lt;/p&gt;</content><author><name></name></author><summary type="html">Memcached</summary></entry></feed>
