@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>php -l 语法检查之以小见大 （一周学习报-第3期） | Rust.Love</title>
+<meta name="generator" content="Jekyll v3.7.2" />
+<meta property="og:title" content="php -l 语法检查之以小见大 （一周学习报-第3期）" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="背景" />
+<meta property="og:description" content="背景" />
+<link rel="canonical" href="http://rust.love/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint.html" />
+<meta property="og:url" content="http://rust.love/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint.html" />
+<meta property="og:site_name" content="Rust.Love" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-02-24T00:00:00+08:00" />
+<script type="application/ld+json">
+{"headline":"php -l 语法检查之以小见大 （一周学习报-第3期）","dateModified":"2018-02-24T00:00:00+08:00","datePublished":"2018-02-24T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://rust.love/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint.html"},"description":"背景","@type":"BlogPosting","url":"http://rust.love/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint.html","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link type="application/atom+xml" rel="alternate" href="http://rust.love/feed.xml" title="Rust.Love" />
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" rel="author" href="/">Rust.Love</a>
+
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">php -l 语法检查之以小见大 （一周学习报-第3期）</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-02-24T00:00:00+08:00" itemprop="datePublished">
+        
+        Feb 24, 2018
+      </time>
+      </p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h3 id="背景">背景</h3>
+
+<p>前两期主要是关于系统设计方面的，第 3 期做一期关于 php 源码方面的内容。
+我们日常开发和做一些小修改时，尤其是在服务器上，经常使用 php -l 来检测修改的代码是否会导致语法错误，做一些基础的语法检查，所以探究下 php lint 的工作原理很有必要。</p>
+
+<h3 id="目标">目标</h3>
+
+<ul>
+  <li>理解 php -l 工作的原理</li>
+</ul>
+
+<h3 id="了解-php-lint">了解 php lint</h3>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">➜</span>  <span class="o">~</span> <span class="nx">php</span> <span class="o">-</span><span class="nx">h</span>
+<span class="nx">Usage</span><span class="o">:</span> <span class="nx">php</span> <span class="p">[</span><span class="nx">options</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="nx">f</span><span class="p">]</span> <span class="o">&lt;</span><span class="nb">file</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">--</span><span class="p">]</span> <span class="p">[</span><span class="nx">args</span><span class="o">...</span><span class="p">]</span>
+   <span class="nx">php</span> <span class="p">[</span><span class="nx">options</span><span class="p">]</span> <span class="o">-</span><span class="nx">r</span> <span class="o">&lt;</span><span class="nx">code</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">--</span><span class="p">]</span> <span class="p">[</span><span class="nx">args</span><span class="o">...</span><span class="p">]</span>
+   <span class="nx">php</span> <span class="p">[</span><span class="nx">options</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="nx">B</span> <span class="o">&lt;</span><span class="nx">begin_code</span><span class="o">&gt;</span><span class="p">]</span> <span class="o">-</span><span class="nx">R</span> <span class="o">&lt;</span><span class="nx">code</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">-</span><span class="nx">E</span> <span class="o">&lt;</span><span class="nx">end_code</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="p">]</span> <span class="p">[</span><span class="nx">args</span><span class="o">...</span><span class="p">]</span>
+   <span class="nx">php</span> <span class="p">[</span><span class="nx">options</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="nx">B</span> <span class="o">&lt;</span><span class="nx">begin_code</span><span class="o">&gt;</span><span class="p">]</span> <span class="o">-</span><span class="nx">F</span> <span class="o">&lt;</span><span class="nb">file</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">-</span><span class="nx">E</span> <span class="o">&lt;</span><span class="nx">end_code</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="p">]</span> <span class="p">[</span><span class="nx">args</span><span class="o">...</span><span class="p">]</span>
+   <span class="nx">php</span> <span class="p">[</span><span class="nx">options</span><span class="p">]</span> <span class="o">-</span><span class="nx">S</span> <span class="o">&lt;</span><span class="nx">addr</span><span class="o">&gt;:&lt;</span><span class="nx">port</span><span class="o">&gt;</span> <span class="p">[</span><span class="o">-</span><span class="nx">t</span> <span class="nx">docroot</span><span class="p">]</span> <span class="p">[</span><span class="nx">router</span><span class="p">]</span>
+   <span class="nx">php</span> <span class="p">[</span><span class="nx">options</span><span class="p">]</span> <span class="o">--</span> <span class="p">[</span><span class="nx">args</span><span class="o">...</span><span class="p">]</span>
+   <span class="nx">php</span> <span class="p">[</span><span class="nx">options</span><span class="p">]</span> <span class="o">-</span><span class="nx">a</span>
+
+  <span class="o">......</span>
+  <span class="o">......</span>
+  <span class="o">-</span><span class="nx">h</span>               <span class="nx">This</span> <span class="nx">help</span>
+  <span class="o">-</span><span class="nx">i</span>               <span class="nx">PHP</span> <span class="nx">information</span>
+  <span class="o">-</span><span class="nx">l</span>               <span class="nx">Syntax</span> <span class="nx">check</span> <span class="nx">only</span> <span class="p">(</span><span class="nx">lint</span><span class="p">)</span>
+  <span class="o">......</span>
+  <span class="o">......</span>
+</code></pre></div></div>
+
+<p>在 php 官方的文档中解释如下：</p>
+
+<blockquote>
+  <p>Provides a convenient way to perform only a syntax check on the given PHP code. On success, the text No syntax errors detected in <filename> is written to standard output and the shell return code is 0. On failure, the text Errors parsing <filename> in addition to the internal parser error message is written to standard output and the shell return code is set to -1.</filename></filename></p>
+</blockquote>
+
+<blockquote>
+  <p><strong>This option won’t find fatal errors (like undefined functions). Use the -f to test for fatal errors too.</strong></p>
+</blockquote>
+
+<p>Note：</p>
+<blockquote>
+  <p>This option does not work together with the -r option.</p>
+</blockquote>
+
+<h3 id="相关源码解读v5538">相关源码解读（v5.5.38）</h3>
+
+<p>关于 php 源码的结构和目录功能不在这里复述了，因为线上依然采用的 5.5.x 版本，所以我们也主要以 5.5.38 版本的代码来解读，相关的目录功能在 php 的扩展开发里有很多解释和说明。</p>
+
+<p>因为 php -l 时通过命令行的方式执行的，所以我们主要关注 CLI 部分（涉及 SAPI 概念请自行搜索）。</p>
+
+<p>sapi/cli/php_cli.c</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">static</span> <span class="kt">int</span> <span class="nf">do_cli</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span> <span class="n">TSRMLS_DC</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// 部分代码省略</span>
+
+    <span class="k">case</span> <span class="sc">'l'</span><span class="p">:</span> <span class="cm">/* syntax check mode */</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">behavior</span> <span class="o">!=</span> <span class="n">PHP_MODE_STANDARD</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="n">behavior</span><span class="o">=</span><span class="n">PHP_MODE_LINT</span><span class="p">;</span> <span class="c1">// 注意 behavior，将根据 behavior 来做相应的处理动作</span>
+        <span class="k">break</span><span class="p">;</span>
+
+    <span class="c1">// 部分代码省略</span>
+
+    <span class="k">case</span> <span class="n">PHP_MODE_LINT</span><span class="p">:</span>
+        <span class="c1">// 注意 php_lint_script 这个函数是 main/php_main.h 定义的。</span>
+        <span class="n">exit_status</span> <span class="o">=</span> <span class="n">php_lint_script</span><span class="p">(</span><span class="o">&amp;</span><span class="n">file_handle</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">exit_status</span><span class="o">==</span><span class="n">SUCCESS</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">zend_printf</span><span class="p">(</span><span class="s">"No syntax errors detected in %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">file_handle</span><span class="p">.</span><span class="n">filename</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="n">zend_printf</span><span class="p">(</span><span class="s">"Errors parsing %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">file_handle</span><span class="p">.</span><span class="n">filename</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">break</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>main/main.c</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">PHPAPI</span> <span class="kt">int</span> <span class="nf">php_lint_script</span><span class="p">(</span><span class="n">zend_file_handle</span> <span class="o">*</span><span class="n">file</span> <span class="n">TSRMLS_DC</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">zend_op_array</span> <span class="o">*</span><span class="n">op_array</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">retval</span> <span class="o">=</span> <span class="n">FAILURE</span><span class="p">;</span>
+
+    <span class="n">zend_try</span> <span class="p">{</span>
+        <span class="c1">// 此处对文件进行了“编译”，如果失败就会展示上面代码中的错误信息</span>
+        <span class="n">op_array</span> <span class="o">=</span> <span class="n">zend_compile_file</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">ZEND_INCLUDE</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+        <span class="n">zend_destroy_file_handle</span><span class="p">(</span><span class="n">file</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">op_array</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">destroy_op_array</span><span class="p">(</span><span class="n">op_array</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+            <span class="n">efree</span><span class="p">(</span><span class="n">op_array</span><span class="p">);</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">SUCCESS</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span> <span class="n">zend_end_try</span><span class="p">();</span>
+
+    <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>下面会涉及两个比较重要的文件以及 <a href="https://en.wikipedia.org/wiki/Lex_(software)">lexer 词法分析生成器</a> 、 <a href="https://en.wikipedia.org/wiki/Yacc">yacc Yet Another Compiler-Compiler</a>、<a href="http://re2c.org/">re2c lexer generator</a>、<a href="https://www.gnu.org/software/bison/">bison</a></p>
+
+<ol>
+  <li>Zend/zend_language_scanner.l 词法分析描述文件</li>
+  <li>Zend/zend_language_parser.y 语法描述文件</li>
+</ol>
+
+<p>CG 和 EG</p>
+<ul>
+  <li>CG compiler_globals</li>
+  <li>EG executor_globals</li>
+</ul>
+
+<p>CG 和 EG 对应的源码在 Zend/zend_globals.h 文件内</p>
+
+<p>SCNG 操作的就是下面这个 struct，也定义在了 Zend/zend_globals.h 文件内</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>_zend_php_scanner_globals
+</code></pre></div></div>
+
+<p>Zend/zend_language_scanner.c</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">ZEND_API</span> <span class="n">zend_op_array</span> <span class="o">*</span><span class="nf">compile_file</span><span class="p">(</span><span class="n">zend_file_handle</span> <span class="o">*</span><span class="n">file_handle</span><span class="p">,</span> <span class="kt">int</span> <span class="n">type</span> <span class="n">TSRMLS_DC</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">zend_lex_state</span> <span class="n">original_lex_state</span><span class="p">;</span>
+    <span class="n">zend_op_array</span> <span class="o">*</span><span class="n">op_array</span> <span class="o">=</span> <span class="p">(</span><span class="n">zend_op_array</span> <span class="o">*</span><span class="p">)</span> <span class="n">emalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">zend_op_array</span><span class="p">));</span>
+    <span class="n">zend_op_array</span> <span class="o">*</span><span class="n">original_active_op_array</span> <span class="o">=</span> <span class="n">CG</span><span class="p">(</span><span class="n">active_op_array</span><span class="p">);</span>
+    <span class="n">zend_op_array</span> <span class="o">*</span><span class="n">retval</span><span class="o">=</span><span class="nb">NULL</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">compiler_result</span><span class="p">;</span>
+    <span class="n">zend_bool</span> <span class="n">compilation_successful</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+    <span class="n">znode</span> <span class="n">retval_znode</span><span class="p">;</span>
+    <span class="n">zend_bool</span> <span class="n">original_in_compilation</span> <span class="o">=</span> <span class="n">CG</span><span class="p">(</span><span class="n">in_compilation</span><span class="p">);</span>
+
+    <span class="n">retval_znode</span><span class="p">.</span><span class="n">op_type</span> <span class="o">=</span> <span class="n">IS_CONST</span><span class="p">;</span>
+    <span class="n">retval_znode</span><span class="p">.</span><span class="n">u</span><span class="p">.</span><span class="n">constant</span><span class="p">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">IS_LONG</span><span class="p">;</span>
+    <span class="n">retval_znode</span><span class="p">.</span><span class="n">u</span><span class="p">.</span><span class="n">constant</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="n">lval</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">Z_UNSET_ISREF</span><span class="p">(</span><span class="n">retval_znode</span><span class="p">.</span><span class="n">u</span><span class="p">.</span><span class="n">constant</span><span class="p">);</span>
+    <span class="n">Z_SET_REFCOUNT</span><span class="p">(</span><span class="n">retval_znode</span><span class="p">.</span><span class="n">u</span><span class="p">.</span><span class="n">constant</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+    <span class="n">zend_save_lexical_state</span><span class="p">(</span><span class="o">&amp;</span><span class="n">original_lex_state</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+
+    <span class="n">retval</span> <span class="o">=</span> <span class="n">op_array</span><span class="p">;</span> <span class="cm">/* success oriented */</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">open_file_for_scanning</span><span class="p">(</span><span class="n">file_handle</span> <span class="n">TSRMLS_CC</span><span class="p">)</span><span class="o">==</span><span class="n">FAILURE</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">type</span><span class="o">==</span><span class="n">ZEND_REQUIRE</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">zend_message_dispatcher</span><span class="p">(</span><span class="n">ZMSG_FAILED_REQUIRE_FOPEN</span><span class="p">,</span> <span class="n">file_handle</span><span class="o">-&gt;</span><span class="n">filename</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+            <span class="n">zend_bailout</span><span class="p">();</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="n">zend_message_dispatcher</span><span class="p">(</span><span class="n">ZMSG_FAILED_INCLUDE_FOPEN</span><span class="p">,</span> <span class="n">file_handle</span><span class="o">-&gt;</span><span class="n">filename</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="n">compilation_successful</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="n">init_op_array</span><span class="p">(</span><span class="n">op_array</span><span class="p">,</span> <span class="n">ZEND_USER_FUNCTION</span><span class="p">,</span> <span class="n">INITIAL_OP_ARRAY_SIZE</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+        <span class="n">CG</span><span class="p">(</span><span class="n">in_compilation</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="n">CG</span><span class="p">(</span><span class="n">active_op_array</span><span class="p">)</span> <span class="o">=</span> <span class="n">op_array</span><span class="p">;</span>
+        <span class="n">zend_stack_push</span><span class="p">(</span><span class="o">&amp;</span><span class="n">CG</span><span class="p">(</span><span class="n">context_stack</span><span class="p">),</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">CG</span><span class="p">(</span><span class="n">context</span><span class="p">),</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">CG</span><span class="p">(</span><span class="n">context</span><span class="p">)));</span>
+        <span class="n">zend_init_compiler_context</span><span class="p">(</span><span class="n">TSRMLS_C</span><span class="p">);</span>
+        <span class="c1">// 注意 zendparse</span>
+        <span class="n">compiler_result</span> <span class="o">=</span> <span class="n">zendparse</span><span class="p">(</span><span class="n">TSRMLS_C</span><span class="p">);</span>
+        <span class="n">zend_do_return</span><span class="p">(</span><span class="o">&amp;</span><span class="n">retval_znode</span><span class="p">,</span> <span class="mi">0</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+        <span class="n">CG</span><span class="p">(</span><span class="n">in_compilation</span><span class="p">)</span> <span class="o">=</span> <span class="n">original_in_compilation</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">compiler_result</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* parser error */</span>
+            <span class="n">zend_bailout</span><span class="p">();</span>
+        <span class="p">}</span>
+        <span class="n">compilation_successful</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">retval</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">CG</span><span class="p">(</span><span class="n">active_op_array</span><span class="p">)</span> <span class="o">=</span> <span class="n">original_active_op_array</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">compilation_successful</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">pass_two</span><span class="p">(</span><span class="n">op_array</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+            <span class="n">zend_release_labels</span><span class="p">(</span><span class="mi">0</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="n">efree</span><span class="p">(</span><span class="n">op_array</span><span class="p">);</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="n">zend_restore_lexical_state</span><span class="p">(</span><span class="o">&amp;</span><span class="n">original_lex_state</span> <span class="n">TSRMLS_CC</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>zendparse 实际上是 yyparse，在 make 的时候生成在
+Zend/zend_language_parse.c 文件中。</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/* Substitute the variable and function names.  */</span>
+<span class="cp">#define yyparse         zendparse
+#define yylex           zendlex
+#define yyerror         zenderror
+#define yylval          zendlval
+#define yychar          zendchar
+#define yydebug         zenddebug
+#define yynerrs         zendnerrs
+</span></code></pre></div></div>
+
+<p>yyparse 的作用就是对输入文件进行语法分析，如果分析成功没有错误则返回 0，否则返回非 0，在语法分析的这个阶段，来判断是否有错误，所以有些执行过程中的 fatal error 是没办法发现的。具体操作的代码，可以通过 GDB 来查看整体流程。</p>
+
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="n">gdb</span><span class="p">)</span> <span class="k">break</span> <span class="n">main</span>
+<span class="p">(</span><span class="n">gdb</span><span class="p">)</span> <span class="k">break</span> <span class="n">zendparse</span>
+<span class="p">(</span><span class="n">gdb</span><span class="p">)</span> <span class="n">info</span> <span class="n">b</span>
+<span class="n">Num</span>     <span class="n">Type</span>           <span class="n">Disp</span> <span class="n">Enb</span> <span class="n">Address</span>            <span class="n">What</span>
+<span class="mi">1</span>       <span class="n">breakpoint</span>     <span class="n">keep</span> <span class="n">y</span>   <span class="mh">0x00000000005ff6f3</span> <span class="n">in</span> <span class="n">zendparse</span>
+                                                   <span class="n">at</span> <span class="o">/</span><span class="n">root</span><span class="o">/</span><span class="n">github</span><span class="o">/</span><span class="n">php</span><span class="o">-</span><span class="n">src</span><span class="o">-</span><span class="n">php</span><span class="o">-</span><span class="mi">5</span><span class="p">.</span><span class="mi">5</span><span class="p">.</span><span class="mi">38</span><span class="o">/</span><span class="n">Zend</span><span class="o">/</span><span class="n">zend_language_parser</span><span class="p">.</span><span class="n">c</span><span class="o">:</span><span class="mi">3284</span>
+    <span class="n">breakpoint</span> <span class="n">already</span> <span class="n">hit</span> <span class="mi">1</span> <span class="n">time</span>
+<span class="mi">2</span>       <span class="n">breakpoint</span>     <span class="n">keep</span> <span class="n">y</span>   <span class="mh">0x0000000000607c36</span> <span class="n">in</span> <span class="n">compile_file</span> <span class="n">at</span> <span class="n">Zend</span><span class="o">/</span><span class="n">zend_language_scanner</span><span class="p">.</span><span class="n">l</span><span class="o">:</span><span class="mi">554</span>
+</code></pre></div></div>
+
+<p>为了方便大家的调试，基于 ubuntu 的镜像自己做了一个 <a href="https://hub.docker.com/r/0utman/ubuntu-php55-gdb-debug/">docker image</a>，因为 GDB 需要权限，所以 pull 镜像以后，通过下面的命令增加授权参数进入即可</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">docker</span> <span class="n">pull</span> <span class="mi">0u</span><span class="n">tman</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">-</span><span class="n">php55</span><span class="o">-</span><span class="n">gdb</span><span class="o">-</span><span class="n">debug</span>
+<span class="n">docker</span> <span class="n">run</span> <span class="o">--</span><span class="n">privileged</span> <span class="o">-</span><span class="n">it</span> <span class="o">&lt;</span><span class="n">image</span> <span class="n">name</span><span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p>自己建立一个有语法错误的文件 syntax_check.php 进行实验吧。</p>
+<div class="language-c highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">cd</span> <span class="o">/</span><span class="n">root</span><span class="o">/</span>
+<span class="n">echo</span> <span class="s">"&lt;?php \$0 = 1; "</span> <span class="o">&gt;</span> <span class="n">syntax_check</span><span class="p">.</span><span class="n">php</span>
+<span class="n">gdb</span> <span class="o">--</span><span class="n">args</span> <span class="n">php</span> <span class="o">-</span><span class="n">l</span> <span class="n">syntax_check</span><span class="p">.</span><span class="n">php</span>
+</code></pre></div></div>
+
+<h3 id="总结">总结</h3>
+
+<p>文章内容不长，但是涉及的知识点特别多，希望大家能举一反三。</p>
+
+<ul>
+  <li>php 代码执行过程以及 zend 一些相关知识</li>
+  <li>lexer yacc bison re2c 编译相关的知识</li>
+  <li>gdb 调试</li>
+  <li>docker 运用</li>
+</ul>
+
+<p>如果有必要再把里面的一些知识点分为其它的 topic</p>
+
+  </div>
+
+  
+
+  <a class="u-url" href="/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+    <footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Rust.Love</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            
+              Rust.Love
+            
+            </li>
+            
+            <li><a class="u-email" href="mailto:pochonleeATgmail.com">pochonleeATgmail.com</a></li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+  
+  
+  
+  <li><a href="https://github.com/outman"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">outman</span></a></li>
+  
+  
+  
+  <li><a href="https://www.twitter.com/pochonlee"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">pochonlee</span></a></li>
+  
+  
+  
+</ul>
+
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Freedom &amp; Responsibility.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
