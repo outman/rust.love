@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>架构解析 redis cluster 部署 （一周学习报-第4期） | Rust.Love</title>
+<meta name="generator" content="Jekyll v3.7.2" />
+<meta property="og:title" content="架构解析 redis cluster 部署 （一周学习报-第4期）" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="背景介绍" />
+<meta property="og:description" content="背景介绍" />
+<link rel="canonical" href="http://rust.love/redis/cluster/twemproxy/2018/03/05/redis-cluster.html" />
+<meta property="og:url" content="http://rust.love/redis/cluster/twemproxy/2018/03/05/redis-cluster.html" />
+<meta property="og:site_name" content="Rust.Love" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-03-05T00:00:00+08:00" />
+<script type="application/ld+json">
+{"headline":"架构解析 redis cluster 部署 （一周学习报-第4期）","dateModified":"2018-03-05T00:00:00+08:00","datePublished":"2018-03-05T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://rust.love/redis/cluster/twemproxy/2018/03/05/redis-cluster.html"},"description":"背景介绍","@type":"BlogPosting","url":"http://rust.love/redis/cluster/twemproxy/2018/03/05/redis-cluster.html","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link type="application/atom+xml" rel="alternate" href="http://rust.love/feed.xml" title="Rust.Love" />
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" rel="author" href="/">Rust.Love</a>
+
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">架构解析 redis cluster 部署 （一周学习报-第4期）</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-03-05T00:00:00+08:00" itemprop="datePublished">
+        
+        Mar 5, 2018
+      </time>
+      </p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <h3 id="背景介绍">背景介绍</h3>
+
+<p>主要介绍我们目前 redis 部署的架构，我们采用的 redis 是 2.8 版本，所以下面的讲解都是基于这个版本的讲解。</p>
+
+<h3 id="twemproxy">twemproxy</h3>
+
+<p>twemproxy 是 twitter 开发的项目，实现了 redis 和 Memcached 的协议，可以代理 redis 和 Memcached 的请求。关于 twemproxy 不做更多的介绍，我们使用 twemproxy 是采用的 <a href="https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function">fnv1a_64</a> hash 算法，twemproxy 支持多种 hash 一致性算法，具体的可以看说明文档，根据自身情况采用合适的算法。</p>
+
+<h3 id="redis-sentinel">redis-sentinel</h3>
+
+<p>因为我们使用的 Redis 版本是 2.8，所以在主从架构中我们使用了 redis-sentinel 来部署，关于 <a href="http://redisdoc.com/topic/sentinel.html">redis-sentinel 文档可以看这里</a>，几个特性如下：</p>
+
+<ul>
+  <li>监控（Monitoring）： Sentinel 会不断地检查你的主服务器和从服务器是否运作正常。</li>
+  <li>提醒（Notification）： 当被监控的某个 Redis 服务器出现问题时， Sentinel 可以通过 API 向管理员或者其他应用程序发送通知。</li>
+  <li>自动故障迁移（Automatic failover）： 当一个主服务器不能正常工作时， Sentinel 会开始一次自动故障迁移操作， 它会将失效主服务器的其中一个从服务器升级为新的主服务器， 并让失效主服务器的其他从服务器改为复制新的主服务器； 当客户端试图连接失效的主服务器时， 集群也会向客户端返回新主服务器的地址， 使得集群可以使用新主服务器代替失效服务器。</li>
+</ul>
+
+<h3 id="架构现状">架构现状</h3>
+
+<p>目前的架构我们采用了多代理 + 主从结构，而且在代理 twemproxy 层面并没有做 keep-alived，相当于客户端直接面向了多个代理地址，需要客户端自己去完成代理地址是否可用的处理和判断，而 twemproxy 后端对应的是多个 master-slave 结构，master-slave 通过 redis-sentinel 可以进行自动故障迁移，架构图如下：</p>
+
+<p><img src="/assets/images/redis_cluster.jpeg" alt="redis cluster 工作原理" title="redis cluster 工作原理" /></p>
+
+<p>客户端在使用的时候是面向了三个地址：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>S1:26370
+S2:26370
+S3:26370
+</code></pre></div></div>
+
+<p>每个 26371 后面对应了三个 (S1,S2,S3):6370，6370 对应的是一个 master-slave 结构，并且是交叉部署在不同的服务器上，从上面的结构可以看出，如果其中一台服务器挂掉是不会有问题的，但是如果 2 台挂掉就会有问题，因为数据是通过 twemproxy hash 不同的 master-slave 结构上的，而 master-slave 也做了交叉部署，如果 1 台 Server 有问题，2 台是可以正常工作的，如果 2 台挂了，就会导致数据丢失。</p>
+
+<h4 id="优点缺点">优点&amp;缺点</h4>
+
+<ul>
+  <li>通过代理在数据存储上进行了数据实例分片，提高了数据存储的容量</li>
+  <li>通过多点部署，基本实现了高可用</li>
+  <li>没有对 twemproxy 做 keepalived，客户端需要面向多个地址，自行判断 server 时否存活，向 PHP 这类语言带来了很大的开销，每次请求都要去处理验活</li>
+  <li>如果两个服务器不可用，数据会丢失</li>
+</ul>
+
+<p>从目前的整体架构上来看，缺点还是比较多的，除了 master-slave 可以自动迁移以外，客户端处理验活也是个问题。</p>
+
+<h4 id="使用过程中的问题">使用过程中的问题</h4>
+
+<p>因为目前采用代理，数据是根据 key 进行了分片存储的，所以不支持批量数据操作和一些 select database 这样的操作，如果代码中配置了这样的初始化参数，可能导致无法建立连接等。</p>
+
+<h3 id="展望">展望</h3>
+
+<ul>
+  <li>twemproxy 配置 keepalived，客户端只关注一个地址</li>
+  <li>升级 Redis，通过 <a href="http://www.redis.cn/topics/cluster-tutorial.html">redis-cluster</a> 来做集群</li>
+</ul>
+
+<h3 id="总结本期的内容">总结本期的内容</h3>
+
+<ul>
+  <li>twemproxy</li>
+  <li>redis-sentinel</li>
+  <li>redis-cluster</li>
+</ul>
+
+<p>文中也涉及了一些引用链接，大家可以点进去读读，本次内容比较简单，现在也有一些其它的代理工具例如 <a href="https://github.com/CodisLabs/codis">Codis</a>，都可以自己去了解下。</p>
+
+<p>EOF;</p>
+
+  </div>
+
+  
+
+  <a class="u-url" href="/redis/cluster/twemproxy/2018/03/05/redis-cluster.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+    <footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Rust.Love</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            
+              Rust.Love
+            
+            </li>
+            
+            <li><a class="u-email" href="mailto:pochonleeATgmail.com">pochonleeATgmail.com</a></li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+  
+  
+  
+  <li><a href="https://github.com/outman"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">outman</span></a></li>
+  
+  
+  
+  <li><a href="https://www.twitter.com/pochonlee"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">pochonlee</span></a></li>
+  
+  
+  
+</ul>
+
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Freedom &amp; Responsibility.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

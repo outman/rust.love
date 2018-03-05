@@ -1,4 +1,69 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.2">Jekyll</generator><link href="http://rust.love/feed.xml" rel="self" type="application/atom+xml" /><link href="http://rust.love/" rel="alternate" type="text/html" /><updated>2018-03-02T17:08:59+08:00</updated><id>http://rust.love/</id><title type="html">Rust.Love</title><subtitle>Freedom &amp; Responsibility.</subtitle><entry><title type="html">php -l 语法检查之以小见大 （一周学习报-第3期）</title><link href="http://rust.love/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint.html" rel="alternate" type="text/html" title="php -l 语法检查之以小见大 （一周学习报-第3期）" /><published>2018-02-24T00:00:00+08:00</published><updated>2018-02-24T00:00:00+08:00</updated><id>http://rust.love/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint</id><content type="html" xml:base="http://rust.love/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint.html">&lt;h3 id=&quot;背景&quot;&gt;背景&lt;/h3&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.2">Jekyll</generator><link href="http://rust.love/feed.xml" rel="self" type="application/atom+xml" /><link href="http://rust.love/" rel="alternate" type="text/html" /><updated>2018-03-05T12:51:22+08:00</updated><id>http://rust.love/</id><title type="html">Rust.Love</title><subtitle>Freedom &amp; Responsibility.</subtitle><entry><title type="html">架构解析 redis cluster 部署 （一周学习报-第4期）</title><link href="http://rust.love/redis/cluster/twemproxy/2018/03/05/redis-cluster.html" rel="alternate" type="text/html" title="架构解析 redis cluster 部署 （一周学习报-第4期）" /><published>2018-03-05T00:00:00+08:00</published><updated>2018-03-05T00:00:00+08:00</updated><id>http://rust.love/redis/cluster/twemproxy/2018/03/05/redis-cluster</id><content type="html" xml:base="http://rust.love/redis/cluster/twemproxy/2018/03/05/redis-cluster.html">&lt;h3 id=&quot;背景介绍&quot;&gt;背景介绍&lt;/h3&gt;
+
+&lt;p&gt;主要介绍我们目前 redis 部署的架构，我们采用的 redis 是 2.8 版本，所以下面的讲解都是基于这个版本的讲解。&lt;/p&gt;
+
+&lt;h3 id=&quot;twemproxy&quot;&gt;twemproxy&lt;/h3&gt;
+
+&lt;p&gt;twemproxy 是 twitter 开发的项目，实现了 redis 和 Memcached 的协议，可以代理 redis 和 Memcached 的请求。关于 twemproxy 不做更多的介绍，我们使用 twemproxy 是采用的 &lt;a href=&quot;https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function&quot;&gt;fnv1a_64&lt;/a&gt; hash 算法，twemproxy 支持多种 hash 一致性算法，具体的可以看说明文档，根据自身情况采用合适的算法。&lt;/p&gt;
+
+&lt;h3 id=&quot;redis-sentinel&quot;&gt;redis-sentinel&lt;/h3&gt;
+
+&lt;p&gt;因为我们使用的 Redis 版本是 2.8，所以在主从架构中我们使用了 redis-sentinel 来部署，关于 &lt;a href=&quot;http://redisdoc.com/topic/sentinel.html&quot;&gt;redis-sentinel 文档可以看这里&lt;/a&gt;，几个特性如下：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;监控（Monitoring）： Sentinel 会不断地检查你的主服务器和从服务器是否运作正常。&lt;/li&gt;
+  &lt;li&gt;提醒（Notification）： 当被监控的某个 Redis 服务器出现问题时， Sentinel 可以通过 API 向管理员或者其他应用程序发送通知。&lt;/li&gt;
+  &lt;li&gt;自动故障迁移（Automatic failover）： 当一个主服务器不能正常工作时， Sentinel 会开始一次自动故障迁移操作， 它会将失效主服务器的其中一个从服务器升级为新的主服务器， 并让失效主服务器的其他从服务器改为复制新的主服务器； 当客户端试图连接失效的主服务器时， 集群也会向客户端返回新主服务器的地址， 使得集群可以使用新主服务器代替失效服务器。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;架构现状&quot;&gt;架构现状&lt;/h3&gt;
+
+&lt;p&gt;目前的架构我们采用了多代理 + 主从结构，而且在代理 twemproxy 层面并没有做 keep-alived，相当于客户端直接面向了多个代理地址，需要客户端自己去完成代理地址是否可用的处理和判断，而 twemproxy 后端对应的是多个 master-slave 结构，master-slave 通过 redis-sentinel 可以进行自动故障迁移，架构图如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/redis_cluster.jpeg&quot; alt=&quot;redis cluster 工作原理&quot; title=&quot;redis cluster 工作原理&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;客户端在使用的时候是面向了三个地址：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;S1:26370
+S2:26370
+S3:26370
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;每个 26371 后面对应了三个 (S1,S2,S3):6370，6370 对应的是一个 master-slave 结构，并且是交叉部署在不同的服务器上，从上面的结构可以看出，如果其中一台服务器挂掉是不会有问题的，但是如果 2 台挂掉就会有问题，因为数据是通过 twemproxy hash 不同的 master-slave 结构上的，而 master-slave 也做了交叉部署，如果 1 台 Server 有问题，2 台是可以正常工作的，如果 2 台挂了，就会导致数据丢失。&lt;/p&gt;
+
+&lt;h4 id=&quot;优点缺点&quot;&gt;优点&amp;amp;缺点&lt;/h4&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;通过代理在数据存储上进行了数据实例分片，提高了数据存储的容量&lt;/li&gt;
+  &lt;li&gt;通过多点部署，基本实现了高可用&lt;/li&gt;
+  &lt;li&gt;没有对 twemproxy 做 keepalived，客户端需要面向多个地址，自行判断 server 时否存活，向 PHP 这类语言带来了很大的开销，每次请求都要去处理验活&lt;/li&gt;
+  &lt;li&gt;如果两个服务器不可用，数据会丢失&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;从目前的整体架构上来看，缺点还是比较多的，除了 master-slave 可以自动迁移以外，客户端处理验活也是个问题。&lt;/p&gt;
+
+&lt;h4 id=&quot;使用过程中的问题&quot;&gt;使用过程中的问题&lt;/h4&gt;
+
+&lt;p&gt;因为目前采用代理，数据是根据 key 进行了分片存储的，所以不支持批量数据操作和一些 select database 这样的操作，如果代码中配置了这样的初始化参数，可能导致无法建立连接等。&lt;/p&gt;
+
+&lt;h3 id=&quot;展望&quot;&gt;展望&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;twemproxy 配置 keepalived，客户端只关注一个地址&lt;/li&gt;
+  &lt;li&gt;升级 Redis，通过 &lt;a href=&quot;http://www.redis.cn/topics/cluster-tutorial.html&quot;&gt;redis-cluster&lt;/a&gt; 来做集群&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;总结本期的内容&quot;&gt;总结本期的内容&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;twemproxy&lt;/li&gt;
+  &lt;li&gt;redis-sentinel&lt;/li&gt;
+  &lt;li&gt;redis-cluster&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;文中也涉及了一些引用链接，大家可以点进去读读，本次内容比较简单，现在也有一些其它的代理工具例如 &lt;a href=&quot;https://github.com/CodisLabs/codis&quot;&gt;Codis&lt;/a&gt;，都可以自己去了解下。&lt;/p&gt;
+
+&lt;p&gt;EOF;&lt;/p&gt;</content><author><name></name></author><summary type="html">背景介绍</summary></entry><entry><title type="html">php -l 语法检查之以小见大 （一周学习报-第3期）</title><link href="http://rust.love/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint.html" rel="alternate" type="text/html" title="php -l 语法检查之以小见大 （一周学习报-第3期）" /><published>2018-02-24T00:00:00+08:00</published><updated>2018-02-24T00:00:00+08:00</updated><id>http://rust.love/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint</id><content type="html" xml:base="http://rust.love/php/kernel/gdb/docker/yacc/lexer/bsion/2018/02/24/php-lint.html">&lt;h3 id=&quot;背景&quot;&gt;背景&lt;/h3&gt;
 
 &lt;p&gt;前两期主要是关于系统设计方面的，第 3 期做一期关于 php 源码方面的内容。
 我们日常开发和做一些小修改时，尤其是在服务器上，经常使用 php -l 来检测修改的代码是否会导致语法错误，做一些基础的语法检查，所以探究下 php lint 的工作原理很有必要。&lt;/p&gt;
@@ -914,321 +979,4 @@ $user = $container-&amp;gt;get('UserModelInterface');
 
 &lt;p&gt;以上代都是为了演示，并不是真实使用环境，和真实环境有差异，请自行调整&lt;/p&gt;
 
-&lt;p&gt;END.&lt;/p&gt;</content><author><name></name></author><summary type="html">本文的目标 简单几步，轻松实现非侵入式缓存。</summary></entry><entry><title type="html">Yaf framework 相关</title><link href="http://rust.love/2016/01/05/yaf_php_framework.html" rel="alternate" type="text/html" title="Yaf framework 相关" /><published>2016-01-05T17:39:41+08:00</published><updated>2016-01-05T17:39:41+08:00</updated><id>http://rust.love/2016/01/05/yaf_php_framework</id><content type="html" xml:base="http://rust.love/2016/01/05/yaf_php_framework.html">&lt;h1 id=&quot;yaf-项目骨架&quot;&gt;Yaf 项目骨架&lt;/h1&gt;
-
-&lt;p&gt;在 yaf 的源码目录，附带了一个工具 tools 目录， 下面有个 cg/yaf_cg 工具，是通过模版生成 yaf 项目骨架的工具。&lt;/p&gt;
-
-&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Usage:
-./yaf_cg ApplicationName &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;ApplicationPath]
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;项目目录&lt;/p&gt;
-&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;├── application
-│   ├── Bootstrap.php
-│   ├── controllers
-│   ├── library
-│   ├── models
-│   ├── plugins
-│   └── views
-├── conf
-│   └── application.ini
-└── index.php
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;index.php 程序的入口文件&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;application 主要的应用程序代码目录。
-2.1 可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;application.directory&lt;/code&gt;这个配置来修改。
-2.2 application 目录下的目录（controllers、models、plugins、views）是默认的代码结构目录，yaf 会根据相关的类名称，去相关目录下加载相关的文件，例如 &lt;code class=&quot;highlighter-rouge&quot;&gt;IndexController extends Yaf\Controller_Abstract&lt;/code&gt; 这个文件，yaf 就会到 &lt;code class=&quot;highlighter-rouge&quot;&gt;controllers&lt;/code&gt; 目录下查找 Index.php、类&lt;code class=&quot;highlighter-rouge&quot;&gt;UserModel&lt;/code&gt;就会到 models 目录下查找 User.php（可以定制文件后缀或前缀模式，如 ModelUser 就是前缀模式）。
-2.3 除了 library 目录以外，其它目录都是在框架编译的时候确定的，library 目录主要是存放一些本地库文件例如我有个&lt;code class=&quot;highlighter-rouge&quot;&gt;Helper_Html (名称空间模式 Helper\Html)&lt;/code&gt;类，通过注册本地类名称空间&lt;code class=&quot;highlighter-rouge&quot;&gt;Yaf_Loader::registerLocalNamespace(&quot;Helper&quot;)&lt;/code&gt;来加载，文件的存储结构是 &lt;code class=&quot;highlighter-rouge&quot;&gt;library/helper/Html.php&lt;/code&gt; 需要注意的就是要开启名称空间，使用&lt;code class=&quot;highlighter-rouge&quot;&gt;namespace&lt;/code&gt;的类名称和不使用&lt;code class=&quot;highlighter-rouge&quot;&gt;namespace&lt;/code&gt;的 classname 有些差异。
-2.4 Bootstrap.php 是框架的引导类 (可以没有)，继承自 &lt;code class=&quot;highlighter-rouge&quot;&gt;Yaf\Bootstrap_Abstract&lt;/code&gt;，在 Application 对象创建的时候可以调用 &lt;code class=&quot;highlighter-rouge&quot;&gt;$application-&amp;gt;bootstrap()-&amp;gt;run()&lt;/code&gt; 这样会执行Bootstrap类里所有&lt;code class=&quot;highlighter-rouge&quot;&gt;_init&lt;/code&gt;开头的方法，一般用于初始化一些配置或者数据或者初始化plugin等资源。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;conf 是配置文件目录， 也是可以修改的。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h1 id=&quot;yaf-完成一次请求的流程图&quot;&gt;Yaf 完成一次请求的流程图&lt;/h1&gt;
-&lt;p&gt;&lt;img src=&quot;/assets/images/yaf_sequence.png&quot; alt=&quot;yaf流程图&quot; /&gt;&lt;/p&gt;
-
-&lt;h1 id=&quot;流程解读&quot;&gt;流程解读&lt;/h1&gt;
-
-&lt;h2 id=&quot;indexphp-入口&quot;&gt;index.php 入口&lt;/h2&gt;
-&lt;div class=&quot;language-php highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?php&lt;/span&gt;
-&lt;span class=&quot;nb&quot;&gt;define&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'APPLICATION_PATH'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;dirname&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;__FILE__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-
-&lt;span class=&quot;nv&quot;&gt;$application&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Yaf\Application&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;APPLICATION_PATH&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;/conf/application.ini&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$application&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;bootstrap&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 执行引导类Bootstrap.php 相关的引导方法&lt;/span&gt;
-&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h2 id=&quot;bootstrapphp-引导类&quot;&gt;Bootstrap.php 引导类&lt;/h2&gt;
-&lt;div class=&quot;language-php highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?php&lt;/span&gt;
-&lt;span class=&quot;sd&quot;&gt;/**
-* 所有的 _init 开头的的方法，都会被执行
-*/&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Bootstrap&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;extends&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Yaf\Bootstrap_Abstract&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;sd&quot;&gt;/**
-* 初始化本地类库的名称空间 Biz Ns
-* 例如本地类库 Biz_Test, Ns\Test 放在library目录下
-* library/biz/Test.php
-* library/ns/Test.php
-*/&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;_initRegisterLocalClass&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Yaf\Dispatcher&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$loader&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Yaf\Loader&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;getInstance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$loader&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;registerLocalNamespace&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;array&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Biz&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Ns&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;sd&quot;&gt;/**
-* 初始化一些配置信息
-*/&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;_initConfig&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$arrConfig&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Yaf\Application&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;getConfig&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-&lt;span class=&quot;nx&quot;&gt;Yaf\Registry&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'config'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$arrConfig&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;_initPlugin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Yaf\Dispatcher&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// 初始化一些插件， 插件文件存放在 plugins 目录，&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// 类名字规则是 XxxxPlugin 放在 plugins 下的 Xxxx.php 文件&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;_initRoute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Yaf\Dispatcher&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// 增加一些路由规则&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// 默认是 Yaf_Route_Static&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// 支持以下方式&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// Yaf_Route_Simple&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// Yaf_Route_Supervar&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// Yaf_Route_Static&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// Yaf_Route_Map&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// Yaf_Route_Rewrite&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// Yaf_Route_Regex&lt;/span&gt;
-
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;err&quot;&gt;……&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;可以做更多的事情&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h2 id=&quot;插件-plugins&quot;&gt;插件 Plugins&lt;/h2&gt;
-&lt;p&gt;创建一个插件 Sample&lt;/p&gt;
-&lt;div class=&quot;language-php highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// Sample.php&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;SamplePlugin&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;extends&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Yaf\Plugin_Abstract&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;插件定义了6个 hook&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;routerStartup
-routerShutdown
-dispatchLoopStartup
-preDispatch
-postDispatch
-dispatchLoopShutdown
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-&lt;p&gt;插件的执行顺序是先进先调用。&lt;/p&gt;
-
-&lt;h2 id=&quot;路由规则-routes&quot;&gt;路由规则 routes&lt;/h2&gt;
-
-&lt;p&gt;yaf 支持多种路由规则，默认采用了&lt;code class=&quot;highlighter-rouge&quot;&gt;Yaf_Route_Static&lt;/code&gt;方式，支持以下方式&lt;/p&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Yaf_Route_Simple
-Yaf_Route_Supervar
-Yaf_Route_Static
-Yaf_Route_Map
-Yaf_Route_Rewrite
-Yaf_Route_Regex
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;路由规则可以配置在 application.ini 配置文件内，也可以在程序初始化的时候动态生成增加，用户也可以通过实现&lt;code class=&quot;highlighter-rouge&quot;&gt;Route_Interface&lt;/code&gt;接口，自定义路由规则。具体各种路由协议的含义和使用方式见&lt;a href=&quot;http://www.laruence.com/manual/yaf.routes.html&quot;&gt;路由协议详解&lt;/a&gt;。&lt;/p&gt;
-
-&lt;h2 id=&quot;视图-views&quot;&gt;视图 Views&lt;/h2&gt;
-&lt;p&gt;yaf 的视图文件默认放在 views 目录下，默认文件后缀名称 &lt;code class=&quot;highlighter-rouge&quot;&gt;.phtml&lt;/code&gt;，view 文件就是 php 文件。&lt;/p&gt;
-
-&lt;h2 id=&quot;模块-modules-支持&quot;&gt;模块 modules 支持&lt;/h2&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;
-    &lt;p&gt;yaf 默认支持模块的，在默认的路由模式下，一般请求的路径为 &lt;code class=&quot;highlighter-rouge&quot;&gt;/index.php/Module/Controller/Action/p1/v1/p2/v2&lt;/code&gt; （通过 rewrite 规则去除 index.php）就是 &lt;code class=&quot;highlighter-rouge&quot;&gt;/Module/Controller/Action/p1/v1/p2/v2&lt;/code&gt;&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;如果不指定默认的模块控制器和action，那么这三个值默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;Index&lt;/code&gt;，请求 &lt;code class=&quot;highlighter-rouge&quot;&gt;/index.php&lt;/code&gt; 执行的路由规则就是 &lt;code class=&quot;highlighter-rouge&quot;&gt;/Index/Index/Index&lt;/code&gt;。&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;增加一个模块 Test, 需要配置 &lt;code class=&quot;highlighter-rouge&quot;&gt;application.modules=&quot;Index,Test&quot;&lt;/code&gt; ，且在 applications 下增加 modules/Test/controllers 文件夹，这样 &lt;code class=&quot;highlighter-rouge&quot;&gt;/test/index/index&lt;/code&gt; 就会执行 &lt;code class=&quot;highlighter-rouge&quot;&gt;modules/Test/controllers/Index.php&lt;/code&gt; 文件的 &lt;code class=&quot;highlighter-rouge&quot;&gt;indexAction&lt;/code&gt; 方法&lt;/p&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;如果只有一个默认 module ，那么不需要 modules 文件夹。&lt;/p&gt;
-  &lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h2 id=&quot;引入外部库&quot;&gt;引入外部库&lt;/h2&gt;
-
-&lt;h3 id=&quot;composer-方式&quot;&gt;composer 方式&lt;/h3&gt;
-
-&lt;p&gt;通过 composer 安装的第三方库都会带有autoload.php 文件，那么根据具体的情况可以在 index.php 入口文件或者 Bootstrap 引导类内，加载这个 autoload.php 文件来使用外部类，例如&lt;/p&gt;
-&lt;div class=&quot;language-php highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?php&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// index.php&lt;/span&gt;
-&lt;span class=&quot;nb&quot;&gt;define&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'APPLICATION_PATH'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-&lt;span class=&quot;nb&quot;&gt;dirname&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;__FILE__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-
-&lt;span class=&quot;c1&quot;&gt;// 引入第三方类库&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;require&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;APPLICATION_PATH&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'/vendor/autoload.php'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-&lt;span class=&quot;nv&quot;&gt;$application&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Yaf\Application&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;APPLICATION_PATH&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;/conf/application.ini&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;$application&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;bootstrap&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
-&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-
-&lt;span class=&quot;nx&quot;&gt;在&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Controller&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;使用第三方库&lt;/span&gt;
-&lt;span class=&quot;o&quot;&gt;&amp;lt;?&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;php&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;use&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;GuzzleHttp\Client&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;IndexController&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;extends&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Yaf\Controller_Abstract&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;indexAction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-
-&lt;span class=&quot;nv&quot;&gt;$httpClient&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;Client&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-&lt;span class=&quot;nb&quot;&gt;var_dump&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$httpClient&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;全局库-yaflibrary&quot;&gt;全局库 yaf.library&lt;/h3&gt;
-
-&lt;p&gt;这个配置选项是配置在 php.ini 内的，例如多个项目需要公用一些全局的库文件，那么通过指定该路径，来让不同的项目之间共享同一个库文件。&lt;/p&gt;
-
-&lt;h3 id=&quot;自定义-class-loader&quot;&gt;自定义 class loader&lt;/h3&gt;
-
-&lt;p&gt;如果你的库文件命名方式等不符合 yaf 的自动加载风格，那么可以自定义 auto 方式，可以在 Bootstrap 引导类加载的时候进行注册。&lt;/p&gt;
-
-&lt;h1 id=&quot;主要类库代码解析&quot;&gt;主要类库代码解析&lt;/h1&gt;
-
-&lt;h3 id=&quot;yaf_loaderautoload&quot;&gt;Yaf_Loader::autoload&lt;/h3&gt;
-
-&lt;p&gt;这个是 Yaf 自动加载类的函数， 整个加载行为会受到 &lt;code class=&quot;highlighter-rouge&quot;&gt;yaf.use_spl_autoload&lt;/code&gt; 这个配置的影响，开启的情况下, Yaf在加载不成功的情况下, 会继续让PHP的自动加载函数加载，否则会触发 E_WARNING 或者 E_STRICT 下面是相关部分源码：&lt;/p&gt;
-&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;yaf_internal_autoload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;file_name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;file_name_len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;directory&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lc_classname&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;zend_str_tolower_dup&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;origin_classname&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;class_name_len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;zend_hash_exists&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;EG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;class_table&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;lc_classname&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;class_name_len&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;err&quot;&gt;……&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;efree&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lc_classname&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;php_error_docref&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;E_STRICT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Could not find class %s in %s&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;class_name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;directory&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;php_error_docref&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;E_WARNING&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Failed opening script %s: %s&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;directory&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strerror&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;errno&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;yaf_loaderautoload-流程图&quot;&gt;Yaf_Loader::autoload 流程图&lt;/h3&gt;
-&lt;p&gt;&lt;img src=&quot;/assets/images/autoload.png&quot; alt=&quot;Yaf_Loader::autoload 流程图&quot; /&gt;&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;将 \ 处理为 _ 主要是为了让类名无论是名称空间模式，还是 _ 模式，都兼容。&lt;/li&gt;
-  &lt;li&gt;确定文件目录位置： 主要是根据系统的几个固定目录来判断文件的位置 controllers、models、plugins、library 等。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h3 id=&quot;yaf_applicationbootstrap&quot;&gt;Yaf_Application::bootstrap&lt;/h3&gt;
-
-&lt;p&gt;除了 autoload 是一个比较重要的方法以外，bootstrap 也是一个比较重要的方法，因为经常会有很多数据初始化等代码需要在这个阶段来做，&lt;code class=&quot;highlighter-rouge&quot;&gt;bootstrap()&lt;/code&gt;方法的主要工作就是循环遍历 &lt;code class=&quot;highlighter-rouge&quot;&gt;Bootstrap extends Yaf_Bootstrap&lt;/code&gt; 这个类的所有以 _init 开头的方法，相关代码如下&lt;/p&gt;
-&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;methods&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ce&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;function_table&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;for&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;zend_hash_internal_pointer_reset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;methods&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;zend_hash_has_more_elements&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;methods&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SUCCESS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;zend_hash_move_forward&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;methods&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;func&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;uint&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;ulong&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;idx&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;zend_hash_get_current_key_ex&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;methods&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;func&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;idx&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;cm&quot;&gt;/* cann't use ZEND_STRL in strncasecmp, it cause a compile failed in VS2009 */&lt;/span&gt;
-&lt;span class=&quot;cm&quot;&gt;/* YAF_BOOTSTRAP_INITFUNC_PREFIX 就是 _init */&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;strncasecmp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;func&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;YAF_BOOTSTRAP_INITFUNC_PREFIX&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;sizeof&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;YAF_BOOTSTRAP_INITFUNC_PREFIX&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;continue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;zend_call_method&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bootstrap&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ce&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;func&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;len&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;cm&quot;&gt;/** an uncaught exception threw in function call */&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;EG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;exception&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;zval_ptr_dtor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bootstrap&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;RETURN_FALSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;yaf_dispatcher&quot;&gt;Yaf_Dispatcher&lt;/h3&gt;
-
-&lt;p&gt;Yaf_Dispatcher 是个非常重要的的类，基本贯穿了整个开发过程，包括 plugin 的注册和调用，都和 Yaf_Dispatcher 这个类密切相关。注册类的代码非常简单&lt;/p&gt;
-&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;PHP_METHOD&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;yaf_dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;registerPlugin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;zval&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;yaf_dispatcher_t&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;self&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;getThis&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;zend_parse_parameters&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ZEND_NUM_ARGS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;z&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;FAILURE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Z_TYPE_P&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;IS_OBJECT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;instanceof_function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Z_OBJCE_P&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;yaf_plugin_ce&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;php_error_docref&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;E_WARNING&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Expect a %s instance&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;yaf_plugin_ce&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;RETURN_FALSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;zend_read_property&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;yaf_dispatcher_ce&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ZEND_STRL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;YAF_DISPATCHER_PROPERTY_NAME_PLUGINS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;Z_ADDREF_P&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;add_next_index_zval&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plugin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;RETVAL_ZVAL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;调用插件以及插件中的 6 个 hook 的代码主要集中在 &lt;code class=&quot;highlighter-rouge&quot;&gt;yaf_response_t * yaf_dispatcher_dispatch(yaf_dispatcher_t *dispatcher TSRMLS_DC)&lt;/code&gt; 方法内，主要是 Yaf_Application::run() 的时候，调用该方法。&lt;/p&gt;
-&lt;div class=&quot;language-c highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cm&quot;&gt;/** 代表了 hook 的 6 个阶段
-YAF_PLUGIN_HOOK_ROUTESTARTUP
-YAF_PLUGIN_HOOK_ROUTESHUTDOWN
-YAF_PLUGIN_HOOK_LOOPSTARTUP
-YAF_PLUGIN_HOOK_PREDISPATCH
-YAF_PLUGIN_HOOK_POSTDISPATCH
-YAF_PLUGIN_HOOK_LOOPSHUTDOWN
-*/&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;yaf_request_is_routed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;request&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HOOK_ROUTESTARTUP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_EXCEPTION_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;yaf_dispatcher_route&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;yaf_trigger_error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;YAF_ERR_ROUTE_FAILED&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Routing request failed&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_EXCEPTION_HANDLE_NORET&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;zval_ptr_dtor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;yaf_dispatcher_fix_default&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HOOK_ROUTESHUTDOWN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_EXCEPTION_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;yaf_request_set_routed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;yaf_dispatcher_fix_default&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HOOK_LOOPSTARTUP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_EXCEPTION_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;view&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;yaf_dispatcher_init_view&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;view&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HOOK_PREDISPATCH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_EXCEPTION_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;yaf_dispatcher_handle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;view&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_EXCEPTION_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;zval_ptr_dtor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;yaf_dispatcher_fix_default&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HOOK_POSTDISPATCH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_EXCEPTION_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;--&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nesting&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;yaf_request_is_dispatched&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;request&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;YAF_PLUGIN_HOOK_LOOPSHUTDOWN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_EXCEPTION_HANDLE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nesting&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;yaf_request_is_dispatched&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;request&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;yaf_trigger_error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;YAF_ERR_DISPATCH_FAILED&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TSRMLS_CC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;The max dispatch nesting %ld was reached&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;YAF_G&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;forward_limit&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;YAF_EXCEPTION_HANDLE_NORET&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dispatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;request&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;zval_ptr_dtor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;以上就是几个主要的类和相关代码流程。&lt;/p&gt;</content><author><name></name></author><summary type="html">Yaf 项目骨架</summary></entry></feed>
+&lt;p&gt;END.&lt;/p&gt;</content><author><name></name></author><summary type="html">本文的目标 简单几步，轻松实现非侵入式缓存。</summary></entry></feed>
