@@ -1,4 +1,30 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.2">Jekyll</generator><link href="http://rust.love/feed.xml" rel="self" type="application/atom+xml" /><link href="http://rust.love/" rel="alternate" type="text/html" /><updated>2018-03-23T17:54:16+08:00</updated><id>http://rust.love/</id><title type="html">Rust.Love</title><subtitle>Freedom &amp; Responsibility.</subtitle><entry><title type="html">通过项目来学习 Golang 之 cron.v2 源码分析（一周学习报-第 6 期）</title><link href="http://rust.love/cron.v2/golang/chan/timer/2018/03/23/go-cron-v2.html" rel="alternate" type="text/html" title="通过项目来学习 Golang 之 cron.v2 源码分析（一周学习报-第 6 期）" /><published>2018-03-23T00:00:00+08:00</published><updated>2018-03-23T00:00:00+08:00</updated><id>http://rust.love/cron.v2/golang/chan/timer/2018/03/23/go-cron-v2</id><content type="html" xml:base="http://rust.love/cron.v2/golang/chan/timer/2018/03/23/go-cron-v2.html">&lt;p&gt;根据&lt;a href=&quot;http://rust.love/golang/gin-gonic/crontab/2018/03/09/golang-crontab-web.html&quot;&gt;第五期&lt;/a&gt;的 cron 项目，理解 cron.v2 项目的源码，主要涉及的知识点&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.2">Jekyll</generator><link href="http://rust.love/feed.xml" rel="self" type="application/atom+xml" /><link href="http://rust.love/" rel="alternate" type="text/html" /><updated>2018-03-27T10:54:21+08:00</updated><id>http://rust.love/</id><title type="html">Rust.Love</title><subtitle>Freedom &amp; Responsibility.</subtitle><entry><title type="html">MySQL 慢查询优化案例（1）</title><link href="http://rust.love/mysql/explain/slow/2018/03/27/mysql-slow-opt.html" rel="alternate" type="text/html" title="MySQL 慢查询优化案例（1）" /><published>2018-03-27T00:00:00+08:00</published><updated>2018-03-27T00:00:00+08:00</updated><id>http://rust.love/mysql/explain/slow/2018/03/27/mysql-slow-opt</id><content type="html" xml:base="http://rust.love/mysql/explain/slow/2018/03/27/mysql-slow-opt.html">&lt;p&gt;问题描述：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;SQL 慢查询，在我们给 x 度做输出抓取的时候，需要扫描全部的帖子，把帖子数据生成固定的格式（XML 文件）让 x 度来抓取。目前 DBA 那边有一个慢查询，大约每天 5000 次执行，查询语句如下：&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;`jz_post`&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;where&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;`id`&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'{x}'&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;`st`&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'5'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;order&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;`id`&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;asc&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;limit&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;500&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这个语句的目的就是取固定状态下所有的帖子，按照 id 分批取，id 是主键，st 也有索引。该语句从 Explain 上看，是使用到索引了，但是 order by 引起性能问题，我们是循环批量取数据，为了保证数据的完整不被遗漏，所以需要 order by，Explain 如下图所示：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/sql1.png&quot; alt=&quot;Explain&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;这个查询语句虽然用了索引，但是速度还是会非常慢，因为总体数据量大，id 和 st 都是有索引的，如果只是通过 id 和 st 索引，根本解决不了问题，采取的优化手段就是拆分查询，将获取数据分为两部分：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;select id from jz_post where id &amp;gt; ‘{x}’ and st = 5 order by id asc limit 500;&lt;/li&gt;
+  &lt;li&gt;select * from jz_post where id in (‘上一次查询 ID 的结果’)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;看下 Explain 结果：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/sql2.png&quot; alt=&quot;Explain&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;从影响的数据行上来看第一次查询 id 已经不存在性能问题了，一定量的 id 取数据也不会有性能问题，带来的后果就是程序里需要单独去再次查询结果集，但是不会影响整个数据库。&lt;/p&gt;
+
+&lt;p&gt;EOF;&lt;/p&gt;</content><author><name></name></author><summary type="html">问题描述：</summary></entry><entry><title type="html">通过项目来学习 Golang 之 cron.v2 源码分析（一周学习报-第 6 期）</title><link href="http://rust.love/cron.v2/golang/chan/timer/2018/03/23/go-cron-v2.html" rel="alternate" type="text/html" title="通过项目来学习 Golang 之 cron.v2 源码分析（一周学习报-第 6 期）" /><published>2018-03-23T00:00:00+08:00</published><updated>2018-03-23T00:00:00+08:00</updated><id>http://rust.love/cron.v2/golang/chan/timer/2018/03/23/go-cron-v2</id><content type="html" xml:base="http://rust.love/cron.v2/golang/chan/timer/2018/03/23/go-cron-v2.html">&lt;p&gt;根据&lt;a href=&quot;http://rust.love/golang/gin-gonic/crontab/2018/03/09/golang-crontab-web.html&quot;&gt;第五期&lt;/a&gt;的 cron 项目，理解 cron.v2 项目的源码，主要涉及的知识点&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;go 关键字&lt;/li&gt;
@@ -1117,45 +1143,4 @@ CDC solutions occur most often in data-warehouse environments since capturing an
 
 &lt;p&gt;关于消耗队列里的内容就不写了。&lt;/p&gt;
 
-&lt;p&gt;END.&lt;/p&gt;</content><author><name></name></author><summary type="html">Laravel 中已经有关于 Event 的说明和介绍了，文档中主要讲述了怎么使用和 Event 的示例场景和功能，下面主要说下整个 Event 的执行过程。</summary></entry><entry><title type="html">luminus web 配置 c3p0 数据库链接池</title><link href="http://rust.love/2017/09/11/luminusweb_with_c3p0.html" rel="alternate" type="text/html" title="luminus web 配置 c3p0 数据库链接池" /><published>2017-09-11T18:33:47+08:00</published><updated>2017-09-11T18:33:47+08:00</updated><id>http://rust.love/2017/09/11/luminusweb_with_c3p0</id><content type="html" xml:base="http://rust.love/2017/09/11/luminusweb_with_c3p0.html">&lt;p&gt;luminus 的 db 操作工具不太好用，所以换成了 funcool 的 jdbc 和 c3p0。&lt;/p&gt;
-
-&lt;h3 id=&quot;增加依赖&quot;&gt;增加依赖&lt;/h3&gt;
-
-&lt;div class=&quot;language-clojure highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;funcool/clojure.jdbc&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0.9.0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mysql/mysql-connector-java&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;5.1.6&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;com.mchange/c3p0&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0.9.5&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;配置-dbpool&quot;&gt;配置 dbpool&lt;/h3&gt;
-
-&lt;div class=&quot;language-clojure highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbpool&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;doto&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;ComboPooledDataSource.&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setJdbcUrl&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;jdbc:&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;:subprotocol&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbspec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;:&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;:subname&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbspec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setUser&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;:dbuser&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbspec&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nil&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setPassword&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;:dbpasswd&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbspec&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nil&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setMinPoolSize&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setMaxPoolSize&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;200&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setMaxConnectionAge&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3600&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;; 1 hour&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setMaxIdleTime&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1800&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;       &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;; 1/2 hour&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setMaxIdleTimeExcessConnections&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;120&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setTestConnectionOnCheckin&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setTestConnectionOnCheckout&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;.setIdleConnectionTestPeriod&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;600&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h3 id=&quot;使用&quot;&gt;使用&lt;/h3&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(defn topic-fetch-all
-[]
-(with-open [conn (jdbc/connection dbpool)]
-(let [result (jdbc/fetch conn &quot;select @@version&quot;)]
-(first result))))
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;END.&lt;/p&gt;</content><author><name></name></author><summary type="html">luminus 的 db 操作工具不太好用，所以换成了 funcool 的 jdbc 和 c3p0。</summary></entry></feed>
+&lt;p&gt;END.&lt;/p&gt;</content><author><name></name></author><summary type="html">Laravel 中已经有关于 Event 的说明和介绍了，文档中主要讲述了怎么使用和 Event 的示例场景和功能，下面主要说下整个 Event 的执行过程。</summary></entry></feed>
