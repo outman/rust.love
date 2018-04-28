@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>gPRC 实践应用（1）（一周学习报-第7期） | Rust.Love</title>
+<meta name="generator" content="Jekyll v3.7.2" />
+<meta property="og:title" content="gPRC 实践应用（1）（一周学习报-第7期）" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="为什么是实践应用（1）？因为每一个软件都有很多事儿，稍后我们会拆分章节分到每一期去整理和讲解。" />
+<meta property="og:description" content="为什么是实践应用（1）？因为每一个软件都有很多事儿，稍后我们会拆分章节分到每一期去整理和讲解。" />
+<link rel="canonical" href="http://rust.love/grpc/grpc-go/go/linkerd/consul/2018/04/27/grpc-go.html" />
+<meta property="og:url" content="http://rust.love/grpc/grpc-go/go/linkerd/consul/2018/04/27/grpc-go.html" />
+<meta property="og:site_name" content="Rust.Love" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-04-27T00:00:00+08:00" />
+<script type="application/ld+json">
+{"headline":"gPRC 实践应用（1）（一周学习报-第7期）","dateModified":"2018-04-27T00:00:00+08:00","url":"http://rust.love/grpc/grpc-go/go/linkerd/consul/2018/04/27/grpc-go.html","datePublished":"2018-04-27T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://rust.love/grpc/grpc-go/go/linkerd/consul/2018/04/27/grpc-go.html"},"description":"为什么是实践应用（1）？因为每一个软件都有很多事儿，稍后我们会拆分章节分到每一期去整理和讲解。","@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link type="application/atom+xml" rel="alternate" href="http://rust.love/feed.xml" title="Rust.Love" />
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" rel="author" href="/">Rust.Love</a>
+
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">gPRC 实践应用（1）（一周学习报-第7期）</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-04-27T00:00:00+08:00" itemprop="datePublished">
+        
+        Apr 27, 2018
+      </time>
+      </p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <blockquote>
+  <p>为什么是实践应用（1）？因为每一个软件都有很多事儿，稍后我们会拆分章节分到每一期去整理和讲解。</p>
+</blockquote>
+
+<p>目前我们有一部分内部服务是通过 gRPC 构建的，这里主要讲下 gRPC 在我们这的一点实践，主要分下面几个主题，帮助大家了解我们的是如何在使用和部署 gRPC 服务的，帮助大家理一下思路。下面这个图，是当前我们 gRPC 服务相关的架构图，之后会针对每一块给大家做个介绍。本期意在讲述我们的架构部署和对应的服务有哪些服务构建，具体细节分期以后再讲。</p>
+
+<p><img src="/assets/images/grpc.jpeg" alt="gRPC 服务架构图" /></p>
+
+<h3 id="grpc">gRPC</h3>
+
+<p>RPC（Remote Procedure Call）一种远程调用协议，本身是一种语言无关的协议，简单说就是本地调用远程方法，而这种调用非常简单，对于本地试用者就像调用本地方法一样。关于 RPC 的服务框架有很多，这些框架使得使用 RPC 服务的人，更加专注业务，而不用更多的去关注通信、协议等实现，例如你调用了一个远程方法获取用户信息，在框架范围内只需要在本地执行 <strong>this-&gt;callRemoteUserInfoByUserId(123456)</strong> 就完成了用户信息的获取。 gRPC 也是一种 RPC 服务框架，类似的还有 Facebook 的 thrift，我们的服务扣费等功能，就是 thrift 实现的，还有频次控制服务也是 thrift 的。关于 gRPC 的文档说明和定义，都有了<a href="https://skyao.io/learning-grpc/grpc/motivation.html">中文翻译版本</a>这里不在复述。</p>
+
+<h3 id="protobuf">protobuf</h3>
+
+<p>因为 RPC 服务是语言无关的，所以在不同语言上，就需要一个介质进行不同语言之间的数据转换，一般可以理解为不同语言间的序列化和反序列化，现在最常用的可能是 json 格式，例如 php 服务端接口生成的 json 为客户端 android 或者 iOS 提供服务。又如 RPC 服务 java 做服务端，php 做客户端，那么 php 和 java 之间就需要进行数据格式转换，Protocol Buffers 就是 Google 开源的一套数据转换格式（或者称之为协议），而且 Google 也提供了全套的工具，可以根据 protocol buffers 的数据 <strong>.proto</strong> 文件，生成对应的客户端和服务端代码，让不同编程语言之间通过该格式进行数据转换，而这种转换完全又工具生成，我们只关注服务及方法调用和自己的业务，让开发人员从代码、网络交互等工作中解脱出来。</p>
+
+<p>既然是一种协议或者是数据结构，那就又定义这种结构的语法，这里有一个关于 <strong>.proto</strong>  语法的翻译的<a href="http://colobu.com/2015/01/07/Protobuf-language-guide/">中文文档</a>，（顺便说下这个博客的作者是位技术大牛，上面有很多非常不错的技术文章。），稍后的例子中，我们也会提供一个 <strong>.proto</strong> 的文件。</p>
+
+<h3 id="linkerd">Linkerd</h3>
+
+<p>Linkerd 是一款开源网络代理，旨在作为服务网格进行部署，用于在应用程序内管理、控制和监视服务到服务通信的专用层，也是一套服务治理框架，他提供了性能看板等服务，通过性能看板我们可以直观的看到当前服务的状态。还有很多更强大的功能，包括负载均衡、服务发现等，也提供了多种部署方式，（之前技术部的微服务分享中有讲过，这里不在复述）。和其类似比较火的还有<a href="https://istio.io/">Istio</a></p>
+
+<h3 id="consul">Consul</h3>
+
+<p>Consul 主要是提供服务发现、健康检查等服务的服务，何其相似的软件又大名鼎鼎的 <a href="https://zookeeper.apache.org/">zookeeper</a>、 <a href="https://github.com/coreos/etcd">etcd</a> 等。关于服务发现等软件解决的问题不用说太多，大家也都应该了解了。</p>
+
+<h3 id="示例">示例</h3>
+
+<p>目前我们已经在使用一些 RPC 服务了，就像前面说的线上已经部署了一些 thrift 的服务，还有之前我们推荐服务的也是 gRPC 服务，之前我们一直是作为客户端使用 gRPC 服务，这次的例子主要是客户端和服务端都涉及。当前线上的服务可以通过 host:9990 来查看 dashboard。</p>
+
+<p>下面我们围绕一个 ApplyService 服务来讲解，看看完成一个服务需要我们做哪些事情。</p>
+
+<p><img src="/assets/images/service_flow.jpeg" alt="完成一个服务需要我们做哪些事情？" /></p>
+
+<h4 id="基础环境安装">基础环境安装</h4>
+
+<p>客户端</p>
+<ul>
+  <li>php 的 grpc 扩展</li>
+  <li>php 的 composer 扩展包 grpc/grpc google/protobuf</li>
+</ul>
+
+<p>服务端</p>
+<ul>
+  <li>go</li>
+  <li>grpc-go</li>
+</ul>
+
+<p>proto 工具</p>
+<ul>
+  <li>protoc 代码生成工具和对应的语言插件 grpc_php_plugin protoc-gen-go 等</li>
+</ul>
+
+<h4 id="定义-proto-文件">定义 proto 文件</h4>
+
+<p>$ cat services/apply/apply.proto</p>
+<div class="language-proto highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">syntax</span> <span class="o">=</span> <span class="s">"proto3"</span><span class="p">;</span>
+
+<span class="c1">// package 名称，因为不同的语言在 package 管理上方式不同，
+// 所以 proto 提供了 option 关键字，来帮助不同语言之间让 package 更加友好
+// 因为我们是把这部分服务单独放在项目里的，通过客户端通过 composer 统一管理，
+// 所以用了单独的目录和独立的名称空间 pluto，php 生成的代码名称空间就是
+// namespace Pluto\Services\Apply;
+// 在 composer.json 内加入 autoload 模块
+// "autoload" : {
+//    "psr-4": {
+//        "Pluto\\": "grpc/Pluto/",
+//    }
+// }
+</span><span class="kn">package</span> <span class="nn">pluto</span><span class="o">.</span><span class="n">services.apply</span><span class="p">;</span>
+
+<span class="c1">// 为了上面所说的生成 golang 友好的 package 而设定的
+</span><span class="k">option</span> <span class="na">go_package</span> <span class="o">=</span> <span class="s">"apply"</span><span class="p">;</span>
+
+<span class="kd">service</span> <span class="n">ApplyService</span> <span class="p">{</span>
+
+    <span class="c1">// 一个 rpc 调用
+</span>    <span class="k">rpc</span> <span class="n">FetchApplyByUid</span><span class="p">(</span><span class="n">ApplyRequest</span><span class="p">)</span> <span class="k">returns</span> <span class="p">(</span><span class="n">ApplyResponse</span><span class="p">)</span> <span class="p">{};</span>
+<span class="p">}</span>
+
+<span class="c1">// 请求
+</span><span class="kd">message</span> <span class="nc">ApplyRequest</span> <span class="p">{</span>
+    <span class="kt">string</span> <span class="na">uid</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 响应
+</span><span class="kd">message</span> <span class="nc">ApplyResponse</span> <span class="p">{</span>
+   <span class="kt">string</span> <span class="na">result</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p>除了正常的业务定义以外，我们跟多方合作时，为了语言上的友好，尽量通过 option 关键字，来定义语言友好的包名，让代码组织起来不混乱。</p>
+</blockquote>
+
+<h4 id="客户端代码生成">客户端代码生成</h4>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>protoc --php_out=grpc/ --grpc_out=grpc/ --plugin=protoc-gen-grpc=/usr/local/bin/grpc_php_plugin resource/apply.proto
+</code></pre></div></div>
+
+<p>protoc-gen-grpc 这个插件完成了 Client 类的生成，如果不安装该插件也可以生成代码，但是 Client 里面的逻辑要自己去加入。除了生成的基础类以外，我们看下 Client 这个文件</p>
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">&lt;?php</span>
+<span class="c1">// GENERATED CODE -- DO NOT EDIT!</span>
+
+<span class="k">namespace</span> <span class="nx">Pluto\Services\Apply</span><span class="p">;</span>
+
+<span class="sd">/**
+ */</span>
+<span class="k">class</span> <span class="nc">ApplyServiceClient</span> <span class="k">extends</span> <span class="nx">\Grpc\BaseStub</span> <span class="p">{</span>
+
+    <span class="sd">/**
+     * @param string $hostname hostname
+     * @param array $opts channel options
+     * @param \Grpc\Channel $channel (optional) re-use channel object
+     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">__construct</span><span class="p">(</span><span class="nv">$hostname</span><span class="p">,</span> <span class="nv">$opts</span><span class="p">,</span> <span class="nv">$channel</span> <span class="o">=</span> <span class="kc">null</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">parent</span><span class="o">::</span><span class="na">__construct</span><span class="p">(</span><span class="nv">$hostname</span><span class="p">,</span> <span class="nv">$opts</span><span class="p">,</span> <span class="nv">$channel</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="sd">/**
+     * @param \Pluto\Services\Apply\ApplyRequest $argument input argument
+     * @param array $metadata metadata
+     * @param array $options call options
+     */</span>
+    <span class="k">public</span> <span class="k">function</span> <span class="nf">FetchApplyByUid</span><span class="p">(</span><span class="nx">\Pluto\Services\Apply\ApplyRequest</span> <span class="nv">$argument</span><span class="p">,</span>
+      <span class="nv">$metadata</span> <span class="o">=</span> <span class="p">[],</span> <span class="nv">$options</span> <span class="o">=</span> <span class="p">[])</span> <span class="p">{</span>
+
+        <span class="c1">// 注意这一段代码</span>
+        <span class="c1">// pluto.services.apply.ApplyService 这个就是服务名称，</span>
+        <span class="c1">// 我们后续会使用到这个名字</span>
+        <span class="k">return</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="na">_simpleRequest</span><span class="p">(</span><span class="s1">'/pluto.services.apply.ApplyService/FetchApplyByUid'</span><span class="p">,</span>
+        <span class="nv">$argument</span><span class="p">,</span>
+        <span class="p">[</span><span class="s1">'\Pluto\Services\Apply\ApplyResponse'</span><span class="p">,</span> <span class="s1">'decode'</span><span class="p">],</span>
+        <span class="nv">$metadata</span><span class="p">,</span> <span class="nv">$options</span><span class="p">);</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>PHP 客户端调用代码</p>
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// 这里需要注意 php 的 grpc 扩展的版本，及时升级最新版，</span>
+<span class="c1">// 笔者开始时测试 10w 次请求发现客户端内存飙升，查了 github issue 发现是因为有内存泄漏</span>
+<span class="c1">// 官方在新版本修复了</span>
+<span class="k">private</span> <span class="k">function</span> <span class="nf">callGrpc</span><span class="p">(</span><span class="nv">$id</span><span class="p">,</span> <span class="nv">$output</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// 请求对象初始化</span>
+    <span class="nv">$request</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ApplyRequest</span><span class="p">();</span>
+    <span class="nv">$request</span><span class="o">-&gt;</span><span class="na">setUid</span><span class="p">(</span><span class="nv">$id</span><span class="p">);</span>
+
+    <span class="c1">// 初始化 Client</span>
+    <span class="c1">// 此处配置的是 linkerd 的 4141 代理端口，我们服务用的是 9527 端口</span>
+    <span class="c1">// 稍后会说明</span>
+    <span class="nv">$client</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">ApplyServiceClient</span><span class="p">(</span><span class="s2">"127.0.0.1:4141"</span><span class="p">,</span> <span class="p">[</span>
+        <span class="s1">'credentials'</span> <span class="o">=&gt;</span><span class="nx">ChannelCredentials</span><span class="o">::</span><span class="na">createInsecure</span><span class="p">(),</span>
+        <span class="s1">'timeout'</span> <span class="o">=&gt;</span> <span class="mi">1000000</span><span class="p">,</span>
+    <span class="p">]);</span>
+
+    <span class="c1">// 调用服务</span>
+    <span class="k">list</span><span class="p">(</span><span class="nv">$reply</span><span class="p">,</span> <span class="nv">$status</span><span class="p">)</span> <span class="o">=</span> <span class="nv">$client</span><span class="o">-&gt;</span><span class="na">FetchApplyByUid</span><span class="p">(</span><span class="nv">$request</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">wait</span><span class="p">();</span>
+    <span class="nb">var_dump</span><span class="p">(</span><span class="nv">$reply</span><span class="o">-&gt;</span><span class="na">getResult</span><span class="p">());</span>
+    <span class="nv">$output</span><span class="o">-&gt;</span><span class="na">writeln</span><span class="p">(</span><span class="nv">$reply</span><span class="o">-&gt;</span><span class="na">getResult</span><span class="p">());</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<h4 id="服务单-golang-代码生成">服务单 golang 代码生成</h4>
+
+<p>根据自己组织的目录进行代码生成，根据我们的定义，会生成一个 apply.pb.go 文件</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>protoc --go_out=plugins=grpc:. *.proto
+</code></pre></div></div>
+
+<p>先整体看下我们 golang 服务端的代码结构</p>
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">.</span><span class="x">
+</span><span class="err">├──</span><span class="x"> </span><span class="n">Makefile</span><span class="x">
+</span><span class="err">├──</span><span class="x"> </span><span class="n">README</span><span class="o">.</span><span class="n">md</span><span class="x">
+</span><span class="err">├──</span><span class="x"> </span><span class="n">bin</span><span class="x"> </span><span class="c">// 编译后的二进制文件目录</span><span class="x">
+</span><span class="err">│  </span><span class="x"> </span><span class="err">└──</span><span class="x"> </span><span class="n">pluto</span><span class="x">
+</span><span class="err">├──</span><span class="x"> </span><span class="n">config</span><span class="x"> </span><span class="c">// 配置文件</span><span class="x">
+</span><span class="err">│  </span><span class="x"> </span><span class="err">└──</span><span class="x"> </span><span class="n">config</span><span class="o">.</span><span class="n">yaml</span><span class="x">
+</span><span class="err">├──</span><span class="x"> </span><span class="n">glide</span><span class="o">.</span><span class="n">lock</span><span class="x">
+</span><span class="err">├──</span><span class="x"> </span><span class="n">glide</span><span class="o">.</span><span class="n">yaml</span><span class="x">
+</span><span class="err">├──</span><span class="x"> </span><span class="n">logs</span><span class="x">
+</span><span class="err">├──</span><span class="x"> </span><span class="n">main</span><span class="o">.</span><span class="k">go</span><span class="x"> </span><span class="c">// 主程序</span><span class="x">
+</span><span class="err">├──</span><span class="x"> </span><span class="n">services</span><span class="x">
+</span><span class="err">│  </span><span class="x"> </span><span class="err">├──</span><span class="x"> </span><span class="n">apply</span><span class="x">
+</span><span class="err">│  </span><span class="x"> </span><span class="err">└──</span><span class="x"> </span><span class="n">apply</span><span class="o">.</span><span class="k">go</span><span class="x"> </span><span class="c">// ApplyService 的业务代码</span><span class="x">
+</span><span class="err">├──</span><span class="x"> </span><span class="n">util</span><span class="x"> </span><span class="c">// 工具等目录</span><span class="x">
+</span><span class="err">│  </span><span class="x"> </span><span class="err">├──</span><span class="x"> </span><span class="n">init</span><span class="o">.</span><span class="k">go</span><span class="x">
+</span><span class="err">│  </span><span class="x"> </span><span class="err">└──</span><span class="x"> </span><span class="n">storage</span><span class="o">.</span><span class="k">go</span><span class="x">
+</span><span class="err">└──</span><span class="x"> </span><span class="n">vendor</span><span class="x"> </span><span class="c">// 依赖</span><span class="x">
+    </span><span class="err">├──</span><span class="x"> </span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="x">
+    </span><span class="err">├──</span><span class="x"> </span><span class="n">golang</span><span class="o">.</span><span class="n">org</span><span class="x">
+    </span><span class="err">├──</span><span class="x"> </span><span class="n">google</span><span class="o">.</span><span class="n">golang</span><span class="o">.</span><span class="n">org</span><span class="x">
+    </span><span class="err">└──</span><span class="x"> </span><span class="n">gopkg</span><span class="o">.</span><span class="n">in</span><span class="x">
+</span></code></pre></div></div>
+
+<p>$ cat services/apply/apply.pb.go 注意这部分代码 ServiceName 的注释部分</p>
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">// Code generated by protoc-gen-go. DO NOT EDIT.</span><span class="x">
+</span><span class="c">// source: apply.proto</span><span class="x">
+
+</span><span class="c">/*
+Package apply is a generated protocol buffer package.
+
+It is generated from these files:
+    apply.proto
+
+It has these top-level messages:
+    ApplyRequest
+    ApplyResponse
+*/</span><span class="x">
+</span><span class="k">package</span><span class="x"> </span><span class="n">apply</span><span class="x">
+
+</span><span class="k">import</span><span class="x"> </span><span class="n">proto</span><span class="x"> </span><span class="s">"github.com/golang/protobuf/proto"</span><span class="x">
+</span><span class="k">import</span><span class="x"> </span><span class="n">fmt</span><span class="x"> </span><span class="s">"fmt"</span><span class="x">
+</span><span class="k">import</span><span class="x"> </span><span class="n">math</span><span class="x"> </span><span class="s">"math"</span><span class="x">
+
+</span><span class="k">import</span><span class="x"> </span><span class="p">(</span><span class="x">
+    </span><span class="n">context</span><span class="x"> </span><span class="s">"golang.org/x/net/context"</span><span class="x">
+    </span><span class="n">grpc</span><span class="x"> </span><span class="s">"google.golang.org/grpc"</span><span class="x">
+</span><span class="p">)</span><span class="x">
+
+</span><span class="c">// Reference imports to suppress errors if they are not otherwise used.</span><span class="x">
+</span><span class="k">var</span><span class="x"> </span><span class="n">_</span><span class="x"> </span><span class="o">=</span><span class="x"> </span><span class="n">proto</span><span class="o">.</span><span class="n">Marshal</span><span class="x">
+</span><span class="k">var</span><span class="x"> </span><span class="n">_</span><span class="x"> </span><span class="o">=</span><span class="x"> </span><span class="n">fmt</span><span class="o">.</span><span class="n">Errorf</span><span class="x">
+</span><span class="k">var</span><span class="x"> </span><span class="n">_</span><span class="x"> </span><span class="o">=</span><span class="x"> </span><span class="n">math</span><span class="o">.</span><span class="n">Inf</span><span class="x">
+
+</span><span class="c">// This is a compile-time assertion to ensure that this generated file</span><span class="x">
+</span><span class="c">// is compatible with the proto package it is being compiled against.</span><span class="x">
+</span><span class="c">// A compilation error at this line likely means your copy of the</span><span class="x">
+</span><span class="c">// proto package needs to be updated.</span><span class="x">
+</span><span class="k">const</span><span class="x"> </span><span class="n">_</span><span class="x"> </span><span class="o">=</span><span class="x"> </span><span class="n">proto</span><span class="o">.</span><span class="n">ProtoPackageIsVersion2</span><span class="x"> </span><span class="c">// please upgrade the proto package</span><span class="x">
+
+</span><span class="k">type</span><span class="x"> </span><span class="n">ApplyRequest</span><span class="x"> </span><span class="k">struct</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">Uid</span><span class="x"> </span><span class="kt">string</span><span class="x"> </span><span class="s">`protobuf:"bytes,1,opt,name=uid" json:"uid,omitempty"`</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="n">m</span><span class="x"> </span><span class="o">*</span><span class="n">ApplyRequest</span><span class="p">)</span><span class="x"> </span><span class="n">Reset</span><span class="p">()</span><span class="x">                    </span><span class="p">{</span><span class="x"> </span><span class="o">*</span><span class="n">m</span><span class="x"> </span><span class="o">=</span><span class="x"> </span><span class="n">ApplyRequest</span><span class="p">{}</span><span class="x"> </span><span class="p">}</span><span class="x">
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="n">m</span><span class="x"> </span><span class="o">*</span><span class="n">ApplyRequest</span><span class="p">)</span><span class="x"> </span><span class="n">String</span><span class="p">()</span><span class="x"> </span><span class="kt">string</span><span class="x">            </span><span class="p">{</span><span class="x"> </span><span class="k">return</span><span class="x"> </span><span class="n">proto</span><span class="o">.</span><span class="n">CompactTextString</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="x"> </span><span class="p">}</span><span class="x">
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="o">*</span><span class="n">ApplyRequest</span><span class="p">)</span><span class="x"> </span><span class="n">ProtoMessage</span><span class="p">()</span><span class="x">               </span><span class="p">{}</span><span class="x">
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="o">*</span><span class="n">ApplyRequest</span><span class="p">)</span><span class="x"> </span><span class="n">Descriptor</span><span class="p">()</span><span class="x"> </span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span><span class="x"> </span><span class="p">[]</span><span class="kt">int</span><span class="p">)</span><span class="x"> </span><span class="p">{</span><span class="x"> </span><span class="k">return</span><span class="x"> </span><span class="n">fileDescriptor0</span><span class="p">,</span><span class="x"> </span><span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="m">0</span><span class="p">}</span><span class="x"> </span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="n">m</span><span class="x"> </span><span class="o">*</span><span class="n">ApplyRequest</span><span class="p">)</span><span class="x"> </span><span class="n">GetUid</span><span class="p">()</span><span class="x"> </span><span class="kt">string</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="k">if</span><span class="x"> </span><span class="n">m</span><span class="x"> </span><span class="o">!=</span><span class="x"> </span><span class="no">nil</span><span class="x"> </span><span class="p">{</span><span class="x">
+        </span><span class="k">return</span><span class="x"> </span><span class="n">m</span><span class="o">.</span><span class="n">Uid</span><span class="x">
+    </span><span class="p">}</span><span class="x">
+    </span><span class="k">return</span><span class="x"> </span><span class="s">""</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">type</span><span class="x"> </span><span class="n">ApplyResponse</span><span class="x"> </span><span class="k">struct</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">Result</span><span class="x"> </span><span class="kt">string</span><span class="x"> </span><span class="s">`protobuf:"bytes,1,opt,name=result" json:"result,omitempty"`</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="n">m</span><span class="x"> </span><span class="o">*</span><span class="n">ApplyResponse</span><span class="p">)</span><span class="x"> </span><span class="n">Reset</span><span class="p">()</span><span class="x">                    </span><span class="p">{</span><span class="x"> </span><span class="o">*</span><span class="n">m</span><span class="x"> </span><span class="o">=</span><span class="x"> </span><span class="n">ApplyResponse</span><span class="p">{}</span><span class="x"> </span><span class="p">}</span><span class="x">
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="n">m</span><span class="x"> </span><span class="o">*</span><span class="n">ApplyResponse</span><span class="p">)</span><span class="x"> </span><span class="n">String</span><span class="p">()</span><span class="x"> </span><span class="kt">string</span><span class="x">            </span><span class="p">{</span><span class="x"> </span><span class="k">return</span><span class="x"> </span><span class="n">proto</span><span class="o">.</span><span class="n">CompactTextString</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="x"> </span><span class="p">}</span><span class="x">
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="o">*</span><span class="n">ApplyResponse</span><span class="p">)</span><span class="x"> </span><span class="n">ProtoMessage</span><span class="p">()</span><span class="x">               </span><span class="p">{}</span><span class="x">
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="o">*</span><span class="n">ApplyResponse</span><span class="p">)</span><span class="x"> </span><span class="n">Descriptor</span><span class="p">()</span><span class="x"> </span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span><span class="x"> </span><span class="p">[]</span><span class="kt">int</span><span class="p">)</span><span class="x"> </span><span class="p">{</span><span class="x"> </span><span class="k">return</span><span class="x"> </span><span class="n">fileDescriptor0</span><span class="p">,</span><span class="x"> </span><span class="p">[]</span><span class="kt">int</span><span class="p">{</span><span class="m">1</span><span class="p">}</span><span class="x"> </span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="n">m</span><span class="x"> </span><span class="o">*</span><span class="n">ApplyResponse</span><span class="p">)</span><span class="x"> </span><span class="n">GetResult</span><span class="p">()</span><span class="x"> </span><span class="kt">string</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="k">if</span><span class="x"> </span><span class="n">m</span><span class="x"> </span><span class="o">!=</span><span class="x"> </span><span class="no">nil</span><span class="x"> </span><span class="p">{</span><span class="x">
+        </span><span class="k">return</span><span class="x"> </span><span class="n">m</span><span class="o">.</span><span class="n">Result</span><span class="x">
+    </span><span class="p">}</span><span class="x">
+    </span><span class="k">return</span><span class="x"> </span><span class="s">""</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="n">init</span><span class="p">()</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">proto</span><span class="o">.</span><span class="n">RegisterType</span><span class="p">((</span><span class="o">*</span><span class="n">ApplyRequest</span><span class="p">)(</span><span class="no">nil</span><span class="p">),</span><span class="x"> </span><span class="s">"pluto.services.apply.ApplyRequest"</span><span class="p">)</span><span class="x">
+    </span><span class="n">proto</span><span class="o">.</span><span class="n">RegisterType</span><span class="p">((</span><span class="o">*</span><span class="n">ApplyResponse</span><span class="p">)(</span><span class="no">nil</span><span class="p">),</span><span class="x"> </span><span class="s">"pluto.services.apply.ApplyResponse"</span><span class="p">)</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="c">// Reference imports to suppress errors if they are not otherwise used.</span><span class="x">
+</span><span class="k">var</span><span class="x"> </span><span class="n">_</span><span class="x"> </span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="x">
+</span><span class="k">var</span><span class="x"> </span><span class="n">_</span><span class="x"> </span><span class="n">grpc</span><span class="o">.</span><span class="n">ClientConn</span><span class="x">
+
+</span><span class="c">// This is a compile-time assertion to ensure that this generated file</span><span class="x">
+</span><span class="c">// is compatible with the grpc package it is being compiled against.</span><span class="x">
+</span><span class="k">const</span><span class="x"> </span><span class="n">_</span><span class="x"> </span><span class="o">=</span><span class="x"> </span><span class="n">grpc</span><span class="o">.</span><span class="n">SupportPackageIsVersion4</span><span class="x">
+
+</span><span class="c">// Client API for ApplyService service</span><span class="x">
+
+</span><span class="k">type</span><span class="x"> </span><span class="n">ApplyServiceClient</span><span class="x"> </span><span class="k">interface</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">FetchApplyByUid</span><span class="p">(</span><span class="n">ctx</span><span class="x"> </span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span><span class="x"> </span><span class="n">in</span><span class="x"> </span><span class="o">*</span><span class="n">ApplyRequest</span><span class="p">,</span><span class="x"> </span><span class="n">opts</span><span class="x"> </span><span class="o">...</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallOption</span><span class="p">)</span><span class="x"> </span><span class="p">(</span><span class="o">*</span><span class="n">ApplyResponse</span><span class="p">,</span><span class="x"> </span><span class="kt">error</span><span class="p">)</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">type</span><span class="x"> </span><span class="n">applyServiceClient</span><span class="x"> </span><span class="k">struct</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">cc</span><span class="x"> </span><span class="o">*</span><span class="n">grpc</span><span class="o">.</span><span class="n">ClientConn</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="n">NewApplyServiceClient</span><span class="p">(</span><span class="n">cc</span><span class="x"> </span><span class="o">*</span><span class="n">grpc</span><span class="o">.</span><span class="n">ClientConn</span><span class="p">)</span><span class="x"> </span><span class="n">ApplyServiceClient</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="k">return</span><span class="x"> </span><span class="o">&amp;</span><span class="n">applyServiceClient</span><span class="p">{</span><span class="n">cc</span><span class="p">}</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="p">(</span><span class="n">c</span><span class="x"> </span><span class="o">*</span><span class="n">applyServiceClient</span><span class="p">)</span><span class="x"> </span><span class="n">FetchApplyByUid</span><span class="p">(</span><span class="n">ctx</span><span class="x"> </span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span><span class="x"> </span><span class="n">in</span><span class="x"> </span><span class="o">*</span><span class="n">ApplyRequest</span><span class="p">,</span><span class="x"> </span><span class="n">opts</span><span class="x"> </span><span class="o">...</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallOption</span><span class="p">)</span><span class="x"> </span><span class="p">(</span><span class="o">*</span><span class="n">ApplyResponse</span><span class="p">,</span><span class="x"> </span><span class="kt">error</span><span class="p">)</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">out</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="nb">new</span><span class="p">(</span><span class="n">ApplyResponse</span><span class="p">)</span><span class="x">
+    </span><span class="n">err</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="n">grpc</span><span class="o">.</span><span class="n">Invoke</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="x"> </span><span class="s">"/pluto.services.apply.ApplyService/FetchApplyByUid"</span><span class="p">,</span><span class="x"> </span><span class="n">in</span><span class="p">,</span><span class="x"> </span><span class="n">out</span><span class="p">,</span><span class="x"> </span><span class="n">c</span><span class="o">.</span><span class="n">cc</span><span class="p">,</span><span class="x"> </span><span class="n">opts</span><span class="o">...</span><span class="p">)</span><span class="x">
+    </span><span class="k">if</span><span class="x"> </span><span class="n">err</span><span class="x"> </span><span class="o">!=</span><span class="x"> </span><span class="no">nil</span><span class="x"> </span><span class="p">{</span><span class="x">
+        </span><span class="k">return</span><span class="x"> </span><span class="no">nil</span><span class="p">,</span><span class="x"> </span><span class="n">err</span><span class="x">
+    </span><span class="p">}</span><span class="x">
+    </span><span class="k">return</span><span class="x"> </span><span class="n">out</span><span class="p">,</span><span class="x"> </span><span class="no">nil</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="c">// Server API for ApplyService service</span><span class="x">
+
+</span><span class="k">type</span><span class="x"> </span><span class="n">ApplyServiceServer</span><span class="x"> </span><span class="k">interface</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">FetchApplyByUid</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span><span class="x"> </span><span class="o">*</span><span class="n">ApplyRequest</span><span class="p">)</span><span class="x"> </span><span class="p">(</span><span class="o">*</span><span class="n">ApplyResponse</span><span class="p">,</span><span class="x"> </span><span class="kt">error</span><span class="p">)</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="n">RegisterApplyServiceServer</span><span class="p">(</span><span class="n">s</span><span class="x"> </span><span class="o">*</span><span class="n">grpc</span><span class="o">.</span><span class="n">Server</span><span class="p">,</span><span class="x"> </span><span class="n">srv</span><span class="x"> </span><span class="n">ApplyServiceServer</span><span class="p">)</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">s</span><span class="o">.</span><span class="n">RegisterService</span><span class="p">(</span><span class="o">&amp;</span><span class="n">_ApplyService_serviceDesc</span><span class="p">,</span><span class="x"> </span><span class="n">srv</span><span class="p">)</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="n">_ApplyService_FetchApplyByUid_Handler</span><span class="p">(</span><span class="n">srv</span><span class="x"> </span><span class="k">interface</span><span class="p">{},</span><span class="x"> </span><span class="n">ctx</span><span class="x"> </span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span><span class="x"> </span><span class="n">dec</span><span class="x"> </span><span class="k">func</span><span class="p">(</span><span class="k">interface</span><span class="p">{})</span><span class="x"> </span><span class="kt">error</span><span class="p">,</span><span class="x"> </span><span class="n">interceptor</span><span class="x"> </span><span class="n">grpc</span><span class="o">.</span><span class="n">UnaryServerInterceptor</span><span class="p">)</span><span class="x"> </span><span class="p">(</span><span class="k">interface</span><span class="p">{},</span><span class="x"> </span><span class="kt">error</span><span class="p">)</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">in</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="nb">new</span><span class="p">(</span><span class="n">ApplyRequest</span><span class="p">)</span><span class="x">
+    </span><span class="k">if</span><span class="x"> </span><span class="n">err</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="n">dec</span><span class="p">(</span><span class="n">in</span><span class="p">);</span><span class="x"> </span><span class="n">err</span><span class="x"> </span><span class="o">!=</span><span class="x"> </span><span class="no">nil</span><span class="x"> </span><span class="p">{</span><span class="x">
+        </span><span class="k">return</span><span class="x"> </span><span class="no">nil</span><span class="p">,</span><span class="x"> </span><span class="n">err</span><span class="x">
+    </span><span class="p">}</span><span class="x">
+    </span><span class="k">if</span><span class="x"> </span><span class="n">interceptor</span><span class="x"> </span><span class="o">==</span><span class="x"> </span><span class="no">nil</span><span class="x"> </span><span class="p">{</span><span class="x">
+        </span><span class="k">return</span><span class="x"> </span><span class="n">srv</span><span class="o">.</span><span class="p">(</span><span class="n">ApplyServiceServer</span><span class="p">)</span><span class="o">.</span><span class="n">FetchApplyByUid</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="x"> </span><span class="n">in</span><span class="p">)</span><span class="x">
+    </span><span class="p">}</span><span class="x">
+    </span><span class="n">info</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="o">&amp;</span><span class="n">grpc</span><span class="o">.</span><span class="n">UnaryServerInfo</span><span class="p">{</span><span class="x">
+        </span><span class="n">Server</span><span class="o">:</span><span class="x">     </span><span class="n">srv</span><span class="p">,</span><span class="x">
+        </span><span class="n">FullMethod</span><span class="o">:</span><span class="x"> </span><span class="s">"/pluto.services.apply.ApplyService/FetchApplyByUid"</span><span class="p">,</span><span class="x">
+    </span><span class="p">}</span><span class="x">
+    </span><span class="n">handler</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="k">func</span><span class="p">(</span><span class="n">ctx</span><span class="x"> </span><span class="n">context</span><span class="o">.</span><span class="n">Context</span><span class="p">,</span><span class="x"> </span><span class="n">req</span><span class="x"> </span><span class="k">interface</span><span class="p">{})</span><span class="x"> </span><span class="p">(</span><span class="k">interface</span><span class="p">{},</span><span class="x"> </span><span class="kt">error</span><span class="p">)</span><span class="x"> </span><span class="p">{</span><span class="x">
+        </span><span class="k">return</span><span class="x"> </span><span class="n">srv</span><span class="o">.</span><span class="p">(</span><span class="n">ApplyServiceServer</span><span class="p">)</span><span class="o">.</span><span class="n">FetchApplyByUid</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="x"> </span><span class="n">req</span><span class="o">.</span><span class="p">(</span><span class="o">*</span><span class="n">ApplyRequest</span><span class="p">))</span><span class="x">
+    </span><span class="p">}</span><span class="x">
+    </span><span class="k">return</span><span class="x"> </span><span class="n">interceptor</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span><span class="x"> </span><span class="n">in</span><span class="p">,</span><span class="x"> </span><span class="n">info</span><span class="p">,</span><span class="x"> </span><span class="n">handler</span><span class="p">)</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">var</span><span class="x"> </span><span class="n">_ApplyService_serviceDesc</span><span class="x"> </span><span class="o">=</span><span class="x"> </span><span class="n">grpc</span><span class="o">.</span><span class="n">ServiceDesc</span><span class="p">{</span><span class="x">
+    </span><span class="c">// 注意这部分代，ServiceName</span><span class="x">
+    </span><span class="c">// 与之前 PHP 客户端里的生成代码部分 pluto.services.apply.ApplyService</span><span class="x">
+    </span><span class="c">// 代表了服务的名称，这个名字稍后会用于服务发现服务的注册</span><span class="x">
+    </span><span class="n">ServiceName</span><span class="o">:</span><span class="x"> </span><span class="s">"pluto.services.apply.ApplyService"</span><span class="p">,</span><span class="x">
+    </span><span class="n">HandlerType</span><span class="o">:</span><span class="x"> </span><span class="p">(</span><span class="o">*</span><span class="n">ApplyServiceServer</span><span class="p">)(</span><span class="no">nil</span><span class="p">),</span><span class="x">
+    </span><span class="n">Methods</span><span class="o">:</span><span class="x"> </span><span class="p">[]</span><span class="n">grpc</span><span class="o">.</span><span class="n">MethodDesc</span><span class="p">{</span><span class="x">
+        </span><span class="p">{</span><span class="x">
+            </span><span class="n">MethodName</span><span class="o">:</span><span class="x"> </span><span class="s">"FetchApplyByUid"</span><span class="p">,</span><span class="x">
+            </span><span class="n">Handler</span><span class="o">:</span><span class="x">    </span><span class="n">_ApplyService_FetchApplyByUid_Handler</span><span class="p">,</span><span class="x">
+        </span><span class="p">},</span><span class="x">
+    </span><span class="p">},</span><span class="x">
+    </span><span class="n">Streams</span><span class="o">:</span><span class="x">  </span><span class="p">[]</span><span class="n">grpc</span><span class="o">.</span><span class="n">StreamDesc</span><span class="p">{},</span><span class="x">
+    </span><span class="n">Metadata</span><span class="o">:</span><span class="x"> </span><span class="s">"apply.proto"</span><span class="p">,</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="n">init</span><span class="p">()</span><span class="x"> </span><span class="p">{</span><span class="x"> </span><span class="n">proto</span><span class="o">.</span><span class="n">RegisterFile</span><span class="p">(</span><span class="s">"apply.proto"</span><span class="p">,</span><span class="x"> </span><span class="n">fileDescriptor0</span><span class="p">)</span><span class="x"> </span><span class="p">}</span><span class="x">
+
+</span><span class="k">var</span><span class="x"> </span><span class="n">fileDescriptor0</span><span class="x"> </span><span class="o">=</span><span class="x"> </span><span class="p">[]</span><span class="kt">byte</span><span class="p">{</span><span class="x">
+    </span><span class="c">// 163 bytes of a gzipped FileDescriptorProto</span><span class="x">
+    </span><span class="m">0x1f</span><span class="p">,</span><span class="x"> </span><span class="m">0x8b</span><span class="p">,</span><span class="x"> </span><span class="m">0x08</span><span class="p">,</span><span class="x"> </span><span class="m">0x00</span><span class="p">,</span><span class="x"> </span><span class="m">0x00</span><span class="p">,</span><span class="x"> </span><span class="m">0x00</span><span class="p">,</span><span class="x"> </span><span class="m">0x00</span><span class="p">,</span><span class="x"> </span><span class="m">0x00</span><span class="p">,</span><span class="x"> </span><span class="m">0x02</span><span class="p">,</span><span class="x"> </span><span class="m">0xff</span><span class="p">,</span><span class="x"> </span><span class="m">0xe2</span><span class="p">,</span><span class="x"> </span><span class="m">0xe2</span><span class="p">,</span><span class="x"> </span><span class="m">0x4e</span><span class="p">,</span><span class="x"> </span><span class="m">0x2c</span><span class="p">,</span><span class="x"> </span><span class="m">0x28</span><span class="p">,</span><span class="x"> </span><span class="m">0xc8</span><span class="p">,</span><span class="x">
+    </span><span class="m">0xa9</span><span class="p">,</span><span class="x"> </span><span class="m">0xd4</span><span class="p">,</span><span class="x"> </span><span class="m">0x2b</span><span class="p">,</span><span class="x"> </span><span class="m">0x28</span><span class="p">,</span><span class="x"> </span><span class="m">0xca</span><span class="p">,</span><span class="x"> </span><span class="m">0x2f</span><span class="p">,</span><span class="x"> </span><span class="m">0xc9</span><span class="p">,</span><span class="x"> </span><span class="m">0x17</span><span class="p">,</span><span class="x"> </span><span class="m">0x12</span><span class="p">,</span><span class="x"> </span><span class="m">0x29</span><span class="p">,</span><span class="x"> </span><span class="m">0xc8</span><span class="p">,</span><span class="x"> </span><span class="m">0x29</span><span class="p">,</span><span class="x"> </span><span class="m">0x2d</span><span class="p">,</span><span class="x"> </span><span class="m">0xc9</span><span class="p">,</span><span class="x"> </span><span class="m">0xd7</span><span class="p">,</span><span class="x"> </span><span class="m">0x2b</span><span class="p">,</span><span class="x">
+    </span><span class="m">0x4e</span><span class="p">,</span><span class="x"> </span><span class="m">0x2d</span><span class="p">,</span><span class="x"> </span><span class="m">0x2a</span><span class="p">,</span><span class="x"> </span><span class="m">0xcb</span><span class="p">,</span><span class="x"> </span><span class="m">0x4c</span><span class="p">,</span><span class="x"> </span><span class="m">0x4e</span><span class="p">,</span><span class="x"> </span><span class="m">0x2d</span><span class="p">,</span><span class="x"> </span><span class="m">0xd6</span><span class="p">,</span><span class="x"> </span><span class="m">0x03</span><span class="p">,</span><span class="x"> </span><span class="m">0xcb</span><span class="p">,</span><span class="x"> </span><span class="m">0x29</span><span class="p">,</span><span class="x"> </span><span class="m">0x29</span><span class="p">,</span><span class="x"> </span><span class="m">0x70</span><span class="p">,</span><span class="x"> </span><span class="m">0xf1</span><span class="p">,</span><span class="x"> </span><span class="m">0x38</span><span class="p">,</span><span class="x"> </span><span class="m">0x82</span><span class="p">,</span><span class="x">
+    </span><span class="m">0x18</span><span class="p">,</span><span class="x"> </span><span class="m">0x41</span><span class="p">,</span><span class="x"> </span><span class="m">0xa9</span><span class="p">,</span><span class="x"> </span><span class="m">0x85</span><span class="p">,</span><span class="x"> </span><span class="m">0xa5</span><span class="p">,</span><span class="x"> </span><span class="m">0xa9</span><span class="p">,</span><span class="x"> </span><span class="m">0xc5</span><span class="p">,</span><span class="x"> </span><span class="m">0x25</span><span class="p">,</span><span class="x"> </span><span class="m">0x42</span><span class="p">,</span><span class="x"> </span><span class="m">0x02</span><span class="p">,</span><span class="x"> </span><span class="m">0x5c</span><span class="p">,</span><span class="x"> </span><span class="m">0xcc</span><span class="p">,</span><span class="x"> </span><span class="m">0xa5</span><span class="p">,</span><span class="x"> </span><span class="m">0x99</span><span class="p">,</span><span class="x"> </span><span class="m">0x29</span><span class="p">,</span><span class="x"> </span><span class="m">0x12</span><span class="p">,</span><span class="x">
+    </span><span class="m">0x8c</span><span class="p">,</span><span class="x"> </span><span class="m">0x0a</span><span class="p">,</span><span class="x"> </span><span class="m">0x8c</span><span class="p">,</span><span class="x"> </span><span class="m">0x1a</span><span class="p">,</span><span class="x"> </span><span class="m">0x9c</span><span class="p">,</span><span class="x"> </span><span class="m">0x41</span><span class="p">,</span><span class="x"> </span><span class="m">0x20</span><span class="p">,</span><span class="x"> </span><span class="m">0xa6</span><span class="p">,</span><span class="x"> </span><span class="m">0x92</span><span class="p">,</span><span class="x"> </span><span class="m">0x3a</span><span class="p">,</span><span class="x"> </span><span class="m">0x17</span><span class="p">,</span><span class="x"> </span><span class="m">0x2f</span><span class="p">,</span><span class="x"> </span><span class="m">0x54</span><span class="p">,</span><span class="x"> </span><span class="m">0x45</span><span class="p">,</span><span class="x"> </span><span class="m">0x71</span><span class="p">,</span><span class="x"> </span><span class="m">0x41</span><span class="p">,</span><span class="x">
+    </span><span class="m">0x7e</span><span class="p">,</span><span class="x"> </span><span class="m">0x5e</span><span class="p">,</span><span class="x"> </span><span class="m">0x71</span><span class="p">,</span><span class="x"> </span><span class="m">0xaa</span><span class="p">,</span><span class="x"> </span><span class="m">0x90</span><span class="p">,</span><span class="x"> </span><span class="m">0x18</span><span class="p">,</span><span class="x"> </span><span class="m">0x17</span><span class="p">,</span><span class="x"> </span><span class="m">0x5b</span><span class="p">,</span><span class="x"> </span><span class="m">0x51</span><span class="p">,</span><span class="x"> </span><span class="m">0x6a</span><span class="p">,</span><span class="x"> </span><span class="m">0x71</span><span class="p">,</span><span class="x"> </span><span class="m">0x69</span><span class="p">,</span><span class="x"> </span><span class="m">0x4e</span><span class="p">,</span><span class="x"> </span><span class="m">0x09</span><span class="p">,</span><span class="x"> </span><span class="m">0x54</span><span class="p">,</span><span class="x"> </span><span class="m">0x15</span><span class="p">,</span><span class="x">
+    </span><span class="m">0x94</span><span class="p">,</span><span class="x"> </span><span class="m">0x67</span><span class="p">,</span><span class="x"> </span><span class="m">0x94</span><span class="p">,</span><span class="x"> </span><span class="m">0x03</span><span class="p">,</span><span class="x"> </span><span class="m">0x35</span><span class="p">,</span><span class="x"> </span><span class="m">0x2a</span><span class="p">,</span><span class="x"> </span><span class="m">0x18</span><span class="p">,</span><span class="x"> </span><span class="m">0x62</span><span class="p">,</span><span class="x"> </span><span class="m">0x83</span><span class="p">,</span><span class="x"> </span><span class="m">0x50</span><span class="p">,</span><span class="x"> </span><span class="m">0x0c</span><span class="p">,</span><span class="x"> </span><span class="m">0x17</span><span class="p">,</span><span class="x"> </span><span class="m">0xbf</span><span class="p">,</span><span class="x"> </span><span class="m">0x5b</span><span class="p">,</span><span class="x"> </span><span class="m">0x6a</span><span class="p">,</span><span class="x"> </span><span class="m">0x49</span><span class="p">,</span><span class="x">
+    </span><span class="m">0x72</span><span class="p">,</span><span class="x"> </span><span class="m">0x06</span><span class="p">,</span><span class="x"> </span><span class="m">0x58</span><span class="p">,</span><span class="x"> </span><span class="m">0xd0</span><span class="p">,</span><span class="x"> </span><span class="m">0xa9</span><span class="p">,</span><span class="x"> </span><span class="m">0x32</span><span class="p">,</span><span class="x"> </span><span class="m">0x34</span><span class="p">,</span><span class="x"> </span><span class="m">0x33</span><span class="p">,</span><span class="x"> </span><span class="m">0x45</span><span class="p">,</span><span class="x"> </span><span class="m">0x48</span><span class="p">,</span><span class="x"> </span><span class="m">0x49</span><span class="p">,</span><span class="x"> </span><span class="m">0x0f</span><span class="p">,</span><span class="x"> </span><span class="m">0x9b</span><span class="p">,</span><span class="x"> </span><span class="m">0x23</span><span class="p">,</span><span class="x"> </span><span class="m">0xf4</span><span class="p">,</span><span class="x"> </span><span class="m">0x90</span><span class="p">,</span><span class="x">
+    </span><span class="m">0x5d</span><span class="p">,</span><span class="x"> </span><span class="m">0x20</span><span class="p">,</span><span class="x"> </span><span class="m">0xa5</span><span class="p">,</span><span class="x"> </span><span class="m">0x8c</span><span class="p">,</span><span class="x"> </span><span class="m">0x57</span><span class="p">,</span><span class="x"> </span><span class="m">0x0d</span><span class="p">,</span><span class="x"> </span><span class="m">0xc4</span><span class="p">,</span><span class="x"> </span><span class="m">0x0d</span><span class="p">,</span><span class="x"> </span><span class="m">0x4a</span><span class="p">,</span><span class="x"> </span><span class="m">0x0c</span><span class="p">,</span><span class="x"> </span><span class="m">0x4e</span><span class="p">,</span><span class="x"> </span><span class="m">0xec</span><span class="p">,</span><span class="x"> </span><span class="m">0x51</span><span class="p">,</span><span class="x"> </span><span class="m">0xac</span><span class="p">,</span><span class="x"> </span><span class="m">0x60</span><span class="p">,</span><span class="x"> </span><span class="m">0x89</span><span class="p">,</span><span class="x">
+    </span><span class="m">0x24</span><span class="p">,</span><span class="x"> </span><span class="m">0x36</span><span class="p">,</span><span class="x"> </span><span class="m">0xb0</span><span class="p">,</span><span class="x"> </span><span class="m">0xf7</span><span class="p">,</span><span class="x"> </span><span class="m">0x8c</span><span class="p">,</span><span class="x"> </span><span class="m">0x01</span><span class="p">,</span><span class="x"> </span><span class="m">0x01</span><span class="p">,</span><span class="x"> </span><span class="m">0x00</span><span class="p">,</span><span class="x"> </span><span class="m">0x00</span><span class="p">,</span><span class="x"> </span><span class="m">0xff</span><span class="p">,</span><span class="x"> </span><span class="m">0xff</span><span class="p">,</span><span class="x"> </span><span class="m">0x1d</span><span class="p">,</span><span class="x"> </span><span class="m">0x1a</span><span class="p">,</span><span class="x"> </span><span class="m">0x00</span><span class="p">,</span><span class="x"> </span><span class="m">0x10</span><span class="p">,</span><span class="x"> </span><span class="m">0xed</span><span class="p">,</span><span class="x">
+    </span><span class="m">0x00</span><span class="p">,</span><span class="x"> </span><span class="m">0x00</span><span class="p">,</span><span class="x"> </span><span class="m">0x00</span><span class="p">,</span><span class="x">
+</span><span class="p">}</span><span class="x">
+</span></code></pre></div></div>
+
+<p>服务端代码</p>
+<div class="language-go highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">// 指定默认端口，可以通过启动命令行修改</span><span class="x">
+</span><span class="c">// 版本为了编译后查看和服务替换时进行检查</span><span class="x">
+</span><span class="k">const</span><span class="x"> </span><span class="p">(</span><span class="x">
+    </span><span class="n">appListen</span><span class="x">  </span><span class="o">=</span><span class="x"> </span><span class="s">":9527"</span><span class="x">
+    </span><span class="n">appVersion</span><span class="x"> </span><span class="o">=</span><span class="x"> </span><span class="s">"1.0.0"</span><span class="x">
+    </span><span class="n">appName</span><span class="x">    </span><span class="o">=</span><span class="x"> </span><span class="s">"Pluto"</span><span class="x">
+</span><span class="p">)</span><span class="x">
+
+</span><span class="c">// 服务可以通过指定配置文件来启动，基础的配置目前还是依赖配置文件</span><span class="x">
+</span><span class="c">// 服务启动可以指定两个参数：</span><span class="x">
+</span><span class="c">// -listen=host:port 指定监听端口</span><span class="x">
+</span><span class="c">// -config=/your/config/path 指定配置文件</span><span class="x">
+</span><span class="c">// -version 并不会启动服务，只是会输出一些基础数据，用于查看版本等。</span><span class="x">
+</span><span class="k">var</span><span class="x"> </span><span class="n">GlobalConfPath</span><span class="x"> </span><span class="kt">string</span><span class="x">
+</span><span class="k">var</span><span class="x"> </span><span class="n">GlobalListen</span><span class="x"> </span><span class="kt">string</span><span class="x">
+</span><span class="k">var</span><span class="x"> </span><span class="n">GlobalVersion</span><span class="x"> </span><span class="kt">bool</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="n">init</span><span class="p">()</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">flag</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="o">&amp;</span><span class="n">GlobalConfPath</span><span class="p">,</span><span class="x"> </span><span class="s">"config"</span><span class="p">,</span><span class="x"> </span><span class="s">"./config/config.yaml"</span><span class="p">,</span><span class="x"> </span><span class="s">"Config.yaml"</span><span class="p">)</span><span class="x">
+    </span><span class="n">flag</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="o">&amp;</span><span class="n">GlobalListen</span><span class="p">,</span><span class="x"> </span><span class="s">"listen"</span><span class="p">,</span><span class="x"> </span><span class="n">appListen</span><span class="p">,</span><span class="x"> </span><span class="s">"Host:port"</span><span class="p">)</span><span class="x">
+    </span><span class="n">flag</span><span class="o">.</span><span class="n">BoolVar</span><span class="p">(</span><span class="o">&amp;</span><span class="n">GlobalVersion</span><span class="p">,</span><span class="x"> </span><span class="s">"version"</span><span class="p">,</span><span class="x"> </span><span class="no">false</span><span class="p">,</span><span class="x"> </span><span class="s">"Version"</span><span class="p">)</span><span class="x">
+    </span><span class="n">flag</span><span class="o">.</span><span class="n">Parse</span><span class="p">()</span><span class="x">
+
+    </span><span class="n">util</span><span class="o">.</span><span class="n">InitConfigure</span><span class="p">(</span><span class="n">GlobalConfPath</span><span class="p">)</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="c">// 退出系统</span><span class="x">
+</span><span class="k">func</span><span class="x"> </span><span class="n">exitApplication</span><span class="p">()</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">log</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="s">"Exit success..."</span><span class="p">)</span><span class="x">
+    </span><span class="n">os</span><span class="o">.</span><span class="n">Exit</span><span class="p">(</span><span class="m">0</span><span class="p">)</span><span class="x">
+</span><span class="p">}</span><span class="x">
+
+</span><span class="k">func</span><span class="x"> </span><span class="n">main</span><span class="p">()</span><span class="x"> </span><span class="p">{</span><span class="x">
+    </span><span class="n">log</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="s">"Starting..."</span><span class="p">)</span><span class="x">
+
+    </span><span class="c">// 如果参数是 -version 则只是数据配置</span><span class="x">
+    </span><span class="k">if</span><span class="x"> </span><span class="n">GlobalVersion</span><span class="x"> </span><span class="p">{</span><span class="x">
+        </span><span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="n">appName</span><span class="p">,</span><span class="x"> </span><span class="s">":"</span><span class="p">,</span><span class="x"> </span><span class="n">appVersion</span><span class="p">)</span><span class="x">
+        </span><span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="s">"Listen:"</span><span class="p">,</span><span class="x"> </span><span class="n">GlobalListen</span><span class="p">)</span><span class="x">
+        </span><span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="s">"Config:"</span><span class="p">,</span><span class="x"> </span><span class="n">GlobalConfPath</span><span class="p">)</span><span class="x">
+        </span><span class="n">os</span><span class="o">.</span><span class="n">Exit</span><span class="p">(</span><span class="m">0</span><span class="p">)</span><span class="x">
+    </span><span class="p">}</span><span class="x">
+
+    </span><span class="c">// 创建一个信号监听，如果向该服务发送一些信号，对应作出处理，</span><span class="x">
+    </span><span class="c">// 这里主要是退出服务</span><span class="x">
+    </span><span class="n">notifySignal</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="nb">make</span><span class="p">(</span><span class="k">chan</span><span class="x"> </span><span class="n">os</span><span class="o">.</span><span class="n">Signal</span><span class="p">)</span><span class="x">
+    </span><span class="n">signal</span><span class="o">.</span><span class="n">Notify</span><span class="p">(</span><span class="n">notifySignal</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGHUP</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGQUIT</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGUSR1</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGUSR2</span><span class="p">)</span><span class="x">
+    </span><span class="k">go</span><span class="x"> </span><span class="k">func</span><span class="p">()</span><span class="x"> </span><span class="p">{</span><span class="x">
+        </span><span class="k">for</span><span class="x"> </span><span class="n">signalResult</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="k">range</span><span class="x"> </span><span class="n">notifySignal</span><span class="x"> </span><span class="p">{</span><span class="x">
+            </span><span class="k">switch</span><span class="x"> </span><span class="n">signalResult</span><span class="x"> </span><span class="p">{</span><span class="x">
+            </span><span class="k">case</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGHUP</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGINT</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGQUIT</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGUSR1</span><span class="p">,</span><span class="x"> </span><span class="n">syscall</span><span class="o">.</span><span class="n">SIGUSR2</span><span class="o">:</span><span class="x">
+                </span><span class="n">exitApplication</span><span class="p">()</span><span class="x">
+            </span><span class="p">}</span><span class="x">
+        </span><span class="p">}</span><span class="x">
+    </span><span class="p">}()</span><span class="x">
+
+    </span><span class="n">log</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="s">"Listening...."</span><span class="p">)</span><span class="x">
+
+    </span><span class="n">listen</span><span class="p">,</span><span class="x"> </span><span class="n">err</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="n">net</span><span class="o">.</span><span class="n">Listen</span><span class="p">(</span><span class="s">"tcp"</span><span class="p">,</span><span class="x"> </span><span class="n">GlobalListen</span><span class="p">)</span><span class="x">
+    </span><span class="k">if</span><span class="x"> </span><span class="n">err</span><span class="x"> </span><span class="o">!=</span><span class="x"> </span><span class="no">nil</span><span class="x"> </span><span class="p">{</span><span class="x">
+        </span><span class="n">log</span><span class="o">.</span><span class="n">Fatalf</span><span class="p">(</span><span class="s">"Failed to listen: %v"</span><span class="p">,</span><span class="x"> </span><span class="n">err</span><span class="p">)</span><span class="x">
+    </span><span class="p">}</span><span class="x">
+
+    </span><span class="c">// grpc 注册相应的 rpc 服务</span><span class="x">
+    </span><span class="n">server</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="n">grpc</span><span class="o">.</span><span class="n">NewServer</span><span class="p">()</span><span class="x">
+    </span><span class="n">pb</span><span class="o">.</span><span class="n">RegisterApplyServiceServer</span><span class="p">(</span><span class="n">server</span><span class="p">,</span><span class="x"> </span><span class="o">&amp;</span><span class="n">service</span><span class="o">.</span><span class="n">ApplyService</span><span class="p">{})</span><span class="x">
+    </span><span class="n">reflection</span><span class="o">.</span><span class="n">Register</span><span class="p">(</span><span class="n">server</span><span class="p">)</span><span class="x">
+
+    </span><span class="n">log</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="s">"Starting success..."</span><span class="p">)</span><span class="x">
+    </span><span class="c">//  开启服务</span><span class="x">
+    </span><span class="k">if</span><span class="x"> </span><span class="n">err</span><span class="x"> </span><span class="o">:=</span><span class="x"> </span><span class="n">server</span><span class="o">.</span><span class="n">Serve</span><span class="p">(</span><span class="n">listen</span><span class="p">);</span><span class="x"> </span><span class="n">err</span><span class="x"> </span><span class="o">!=</span><span class="x"> </span><span class="no">nil</span><span class="x"> </span><span class="p">{</span><span class="x">
+        </span><span class="n">log</span><span class="o">.</span><span class="n">Fatalf</span><span class="p">(</span><span class="s">"Failed to serve: %v"</span><span class="p">,</span><span class="x"> </span><span class="n">err</span><span class="p">)</span><span class="x">
+    </span><span class="p">}</span><span class="x">
+</span><span class="p">}</span><span class="x">
+</span></code></pre></div></div>
+<p>至此，客户端和服务端的代码都完成了，我们部署了 linkerd 和 consul 服务，所以需要我们注册服务到 consul 上，之后我们就可以通过 <strong>127.0.0.1:4141</strong> 端口来调用了，当然直接调用服务的 <strong>9527</strong> 端口也是没问题的，但是我们是集群服务，避免单点，所以需要把服务注册到 consul 上。注册服务我们可以通过代码也可以通过我们的界面管理，因为我们有统一的 webUI 管理界面，所以我们直接通过 webUI 的界面来注册。注册服务的时候有一个非常重要的字段 ServiceName，就是我们前文两次提到的那个名字，只有通过这个名字，服务端和客户端才能通过 linkerd 的代理服务建立起链接。而这一切 linkerd 和 consul 都为我们做好了，我们只需要将服务注册上去即可。</p>
+
+<p><img src="/assets/images/consul_apply_service.png" alt="服务注册" /></p>
+
+<p>PS: 由于咱们墙大，所以 golang 的很多包无法下载，没有代理的话，可以通过 glide mirror 功能设置镜像，大部分 google 域名下的包在 github 都有镜像，可以顺利下载。这个功能太好用了，再补充一个 glidle.yaml 的配置文件内容吧。</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">import</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">github.com/golang/protobuf</span>
+  <span class="na">version</span><span class="pi">:</span> <span class="s">^1.0.0</span>
+  <span class="na">subpackages</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">proto</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">golang.org/x/net</span>
+  <span class="na">subpackages</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">context</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">golang.org/x/text</span>
+  <span class="na">subpackages</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">unicode</span>
+  <span class="pi">-</span> <span class="s">secure</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">google.golang.org/grpc</span>
+  <span class="na">subpackages</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">reflection</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">google.golang.org/genproto</span>
+  <span class="na">subpackages</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">rpc/status</span>
+  <span class="pi">-</span> <span class="s">googleapis</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">google.golang.org/appengine</span>
+  <span class="na">subpackages</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">cloudsql</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">github.com/olivere/elastic</span>
+  <span class="na">version</span><span class="pi">:</span> <span class="s">^2.0.60</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">github.com/jmoiron/sqlx</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">github.com/bradfitz/gomemcache</span>
+  <span class="na">subpackages</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">memcache</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">golang.org/x/lint</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">github.com/jinzhu/configor</span>
+<span class="pi">-</span> <span class="na">package</span><span class="pi">:</span> <span class="s">github.com/BurntSushi/toml</span>
+  <span class="na">version</span><span class="pi">:</span> <span class="s">^0.3.0</span>
+</code></pre></div></div>
+
+<p>下面是 .glidle/mirrors.yaml 配置</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">repos</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">original</span><span class="pi">:</span> <span class="s">https://golang.org/x/crypto</span>
+  <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/golang/crypto</span>
+<span class="pi">-</span> <span class="na">original</span><span class="pi">:</span> <span class="s">https://golang.org/x/lint</span>
+  <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/golang/lint</span>
+<span class="pi">-</span> <span class="na">original</span><span class="pi">:</span> <span class="s">https://golang.org/x/net</span>
+  <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/golang/net</span>
+<span class="pi">-</span> <span class="na">original</span><span class="pi">:</span> <span class="s">https://golang.org/x/sys</span>
+  <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/golang/sys</span>
+<span class="pi">-</span> <span class="na">original</span><span class="pi">:</span> <span class="s">https://golang.org/x/text</span>
+  <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/golang/text</span>
+<span class="pi">-</span> <span class="na">original</span><span class="pi">:</span> <span class="s">https://google.golang.org/appengine</span>
+  <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/golang/appengine</span>
+<span class="pi">-</span> <span class="na">original</span><span class="pi">:</span> <span class="s">https://google.golang.org/genproto</span>
+  <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/google/go-genproto</span>
+<span class="pi">-</span> <span class="na">original</span><span class="pi">:</span> <span class="s">https://google.golang.org/grpc</span>
+  <span class="na">repo</span><span class="pi">:</span> <span class="s">https://github.com/grpc/grpc-go</span>
+</code></pre></div></div>
+<p>EOT;</p>
+
+  </div>
+
+  
+
+  <a class="u-url" href="/grpc/grpc-go/go/linkerd/consul/2018/04/27/grpc-go.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+    <footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Rust.Love</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            
+              Rust.Love
+            
+            </li>
+            
+            <li><a class="u-email" href="mailto:pochonleeATgmail.com">pochonleeATgmail.com</a></li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+  
+  
+  
+  <li><a href="https://github.com/outman"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">outman</span></a></li>
+  
+  
+  
+  <li><a href="https://www.twitter.com/pochonlee"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">pochonlee</span></a></li>
+  
+  
+  
+</ul>
+
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Freedom &amp; Responsibility.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
