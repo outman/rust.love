@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>Elasticsearch 查询 Size 过大 | Rust.Love</title>
+<meta name="generator" content="Jekyll v3.7.2" />
+<meta property="og:title" content="Elasticsearch 查询 Size 过大" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="今天检索那边爆了一个慢查询，通过查询语句发现是检索那边某服务的一个查询， 语句类似：" />
+<meta property="og:description" content="今天检索那边爆了一个慢查询，通过查询语句发现是检索那边某服务的一个查询， 语句类似：" />
+<link rel="canonical" href="http://rust.love/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch.html" />
+<meta property="og:url" content="http://rust.love/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch.html" />
+<meta property="og:site_name" content="Rust.Love" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-05-18T00:00:00+08:00" />
+<script type="application/ld+json">
+{"headline":"Elasticsearch 查询 Size 过大","dateModified":"2018-05-18T00:00:00+08:00","url":"http://rust.love/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch.html","datePublished":"2018-05-18T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://rust.love/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch.html"},"description":"今天检索那边爆了一个慢查询，通过查询语句发现是检索那边某服务的一个查询， 语句类似：","@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link type="application/atom+xml" rel="alternate" href="http://rust.love/feed.xml" title="Rust.Love" />
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" rel="author" href="/">Rust.Love</a>
+
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Elasticsearch 查询 Size 过大</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-05-18T00:00:00+08:00" itemprop="datePublished">
+        
+        May 18, 2018
+      </time>
+      </p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>今天检索那边爆了一个慢查询，通过查询语句发现是检索那边某服务的一个查询，
+语句类似：</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+    <span class="nx">query</span><span class="o">:</span> <span class="p">{</span>
+        <span class="nx">user_id</span> <span class="o">:</span> <span class="s1">'xxxx'</span>
+    <span class="p">},</span>
+    <span class="nx">size</span><span class="o">:</span> <span class="mi">2147483647</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>这个查询条件比较简单，而且也是精确查询，但是花了 2秒多，问题出在 size 上，
+这个巨大的 size 是 java 里的 Integer.MAX_VALUE，Elasticsearch 在查询时，
+会为查询结果准备数据结构和存储空间，由于这个结果 size 巨大，所以在准备阶段话费了
+巨大时间，但最后的真实结果只有几条记录。</p>
+
+<p>具体可以看下面的这个链接的 Arbitrary Large Size Parameter 部分：</p>
+
+<blockquote>
+  <p>if the size parameter is ridiculously large, then the Elasticsearch will create a ridiculously large internal data structure. And the one who pays the price is you, waiting forever - or so it seems! - for an insignificant result.</p>
+</blockquote>
+
+<p>参考链接：
+<a href="https://www.elastic.co/blog/found-crash-elasticsearch#too-many-shards-or-the-gazillion-shards-problem">https://www.elastic.co/blog/found-crash-elasticsearch#too-many-shards-or-the-gazillion-shards-problem</a></p>
+
+  </div>
+
+  
+
+  <a class="u-url" href="/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+    <footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Rust.Love</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            
+              Rust.Love
+            
+            </li>
+            
+            <li><a class="u-email" href="mailto:pochonleeATgmail.com">pochonleeATgmail.com</a></li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+  
+  
+  
+  <li><a href="https://github.com/outman"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">outman</span></a></li>
+  
+  
+  
+  <li><a href="https://www.twitter.com/pochonlee"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">pochonlee</span></a></li>
+  
+  
+  
+</ul>
+
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Freedom &amp; Responsibility.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
