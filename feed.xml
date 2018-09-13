@@ -1,4 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.2">Jekyll</generator><link href="http://rust.love/feed.xml" rel="self" type="application/atom+xml" /><link href="http://rust.love/" rel="alternate" type="text/html" /><updated>2018-05-18T19:23:33+08:00</updated><id>http://rust.love/</id><title type="html">Rust.Love</title><subtitle>Freedom &amp; Responsibility.</subtitle><entry><title type="html">Elasticsearch 查询 Size 过大</title><link href="http://rust.love/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch.html" rel="alternate" type="text/html" title="Elasticsearch 查询 Size 过大" /><published>2018-05-18T00:00:00+08:00</published><updated>2018-05-18T00:00:00+08:00</updated><id>http://rust.love/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch</id><content type="html" xml:base="http://rust.love/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch.html">&lt;p&gt;今天检索那边爆了一个慢查询，通过查询语句发现是检索那边某服务的一个查询，
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.2">Jekyll</generator><link href="http://rust.love/feed.xml" rel="self" type="application/atom+xml" /><link href="http://rust.love/" rel="alternate" type="text/html" /><updated>2018-09-13T11:20:11+08:00</updated><id>http://rust.love/</id><title type="html">Rust.Love</title><subtitle>Freedom &amp; Responsibility.</subtitle><entry><title type="html">Linux install MySQL step by step</title><link href="http://rust.love/linux/mysql/2018/09/13/install-mysql-step-by-step.html" rel="alternate" type="text/html" title="Linux install MySQL step by step" /><published>2018-09-13T00:00:00+08:00</published><updated>2018-09-13T00:00:00+08:00</updated><id>http://rust.love/linux/mysql/2018/09/13/install-mysql-step-by-step</id><content type="html" xml:base="http://rust.love/linux/mysql/2018/09/13/install-mysql-step-by-step.html">&lt;p&gt;Install MySQL step by step&lt;/p&gt;
+
+&lt;h4 id=&quot;download-mysql-version-linux-glibc212-archtargz&quot;&gt;download mysql-{version}-linux-glibc2.12-{arch}.tar.gz&lt;/h4&gt;
+&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nb&quot;&gt;cp &lt;/span&gt;mysql-&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;version&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-linux-glibc2&lt;/span&gt;.12-&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;arch&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;.tar.gz /your-mysql-prefix-path/
+&lt;span class=&quot;nb&quot;&gt;tar &lt;/span&gt;zxvf mysql-&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;version&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-linux-glibc2&lt;/span&gt;.12-&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;arch&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;.tar.gz
+&lt;span class=&quot;nb&quot;&gt;mv &lt;/span&gt;mysql-&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;version&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-linux-glibc2&lt;/span&gt;.12-&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;arch&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; mysql
+vi /etc/my.cnf
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;mysql
+
+&lt;span class=&quot;c&quot;&gt;# --lc-messages-dir=/your-mysql-prefix-path/mysql/share&lt;/span&gt;
+./bin/mysqld &lt;span class=&quot;nt&quot;&gt;--initialize&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;cp &lt;/span&gt;support-files/mysql.server /etc/init.d/mysql
+service mysql start
+./bin/mysql &lt;span class=&quot;nt&quot;&gt;-uroot&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-h127&lt;/span&gt;.0.0.1 &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;</content><author><name></name></author><summary type="html">Install MySQL step by step</summary></entry><entry><title type="html">Elasticsearch 查询 Size 过大</title><link href="http://rust.love/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch.html" rel="alternate" type="text/html" title="Elasticsearch 查询 Size 过大" /><published>2018-05-18T00:00:00+08:00</published><updated>2018-05-18T00:00:00+08:00</updated><id>http://rust.love/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch</id><content type="html" xml:base="http://rust.love/elasticsearch/query/size/legacy/2018/05/18/crash-your-elasticsearch.html">&lt;p&gt;今天检索那边爆了一个慢查询，通过查询语句发现是检索那边某服务的一个查询，
 语句类似：&lt;/p&gt;
 
 &lt;div class=&quot;language-php highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
@@ -1311,56 +1326,4 @@ CDC solutions occur most often in data-warehouse environments since capturing an
 
 &lt;p&gt;MySQL 的一些 CDC 软件就是实现了 &lt;a href=&quot;https://dev.mysql.com/doc/internals/en/replication-protocol.html&quot;&gt;MySQL-replication&lt;/a&gt; 协议的 Slave 库，只是本身并不存储数据，做一些数据解析和分发功能。文中列举了各种语言的实现，并且都有链接地址，大家可以自行部署去玩了。&lt;/p&gt;
 
-&lt;p&gt;PS: 本来要自己实现一下发现有 PHP 版本了，😂，大家可以自己查看上面列出来的 PHP 的实现，一个简单的&lt;a href=&quot;https://github.com/outman/weekly/tree/master/02&quot;&gt;示例代码&lt;/a&gt;。&lt;/p&gt;</content><author><name></name></author><summary type="html">背景</summary></entry><entry><title type="html">基于 Redis 的延时队列设计与实现（一周学习报-第1期）</title><link href="http://rust.love/2018/02/04/study_weekly_01.html" rel="alternate" type="text/html" title="基于 Redis 的延时队列设计与实现（一周学习报-第1期）" /><published>2018-02-04T22:46:45+08:00</published><updated>2018-02-04T22:46:45+08:00</updated><id>http://rust.love/2018/02/04/study_weekly_01</id><content type="html" xml:base="http://rust.love/2018/02/04/study_weekly_01.html">&lt;h3 id=&quot;本期目标&quot;&gt;本期目标&lt;/h3&gt;
-&lt;ul&gt;
-  &lt;li&gt;了解延时队列的工作原理&lt;/li&gt;
-  &lt;li&gt;自己可以通过现有的工具软件来实现延时队列服务&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;延时队列应用场景&quot;&gt;延时队列应用场景&lt;/h3&gt;
-
-&lt;p&gt;延时队列有很多应用场景，简单来说需要在未来某个特定时间去执行的任务，都可以采用延时队列。例如：&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;下订单后 30 分钟未支付的释放订单。&lt;/li&gt;
-  &lt;li&gt;用户完成某个功能后，N 天推送个消息。&lt;/li&gt;
-  &lt;li&gt;当前我们的使用场景就属于用户被商家处理后，需要 2 天后给用户反馈消息。&lt;/li&gt;
-  &lt;li&gt;……&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;上面提到的这些场景如果不用延时队列都是可以处理的，例如轮训 DB 等，如果采用了延时队列会有更好的效果，除了以上的应用场景，还有很多，可以自己探索。&lt;/p&gt;
-
-&lt;h3 id=&quot;为什么要基于-redis-去设计一个延时队列&quot;&gt;为什么要基于 Redis 去设计一个延时队列&lt;/h3&gt;
-
-&lt;p&gt;已经很有一些不错的延时队列产品。例如 BeansTalk，但是我们这里只为教学目的，所以自己设计一套，基于 PHP 和 Redis 的代码简单，通过自己设计这个过程，可以增强一些概念和了解原理。&lt;/p&gt;
-
-&lt;h3 id=&quot;使用-rabbitmq-死信方式存在的问题&quot;&gt;使用 RabbitMQ 死信方式存在的问题&lt;/h3&gt;
-&lt;ul&gt;
-  &lt;li&gt;同一个队列内，数据延时时间不固定，会有阻塞问题。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;涉及的名词解释&quot;&gt;涉及的名词解释&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Queue 就是正常的队列&lt;/li&gt;
-  &lt;li&gt;enqueue 入队&lt;/li&gt;
-  &lt;li&gt;dequeue 出对&lt;/li&gt;
-  &lt;li&gt;Buckt 延时队列数据的存储器&lt;/li&gt;
-  &lt;li&gt;Scanner 扫描 Bucket，寻找符合条件的数据&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;buckt-设计思路&quot;&gt;Buckt 设计思路&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;为每条消息生成唯一标识，ZSET 存储数据的延时排序 { value: uuid, score: delay_seconds}&lt;/li&gt;
-  &lt;li&gt;Hash 存储具体对应的数据 { key : uuid, value : data}&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;扫描 Bucket 的 ZSET 内的数据，如果 delay_seconds 满足条件，根据 uuid 取出  Hash 内数据，发送到正常队列，删除 ZSET 和 Hash 内的元素。&lt;/p&gt;
-
-&lt;p&gt;为了提高效率，降低延时，对整个服务默认分了 4 个 Bucket，每个 Bucket 对应一个进程去扫描处理。文档如下图：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/study_weekly_01_01.jpeg&quot; alt=&quot;数据流程和文档 01&quot; /&gt;
-&lt;img src=&quot;/assets/images/study_weekly_01_02.jpeg&quot; alt=&quot;数据流程和文档 02&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;源码地址： &lt;a href=&quot;https://github.com/outman/dq&quot;&gt;http://github.com/outman&lt;/a&gt;&lt;/p&gt;</content><author><name></name></author><summary type="html">本期目标 了解延时队列的工作原理 自己可以通过现有的工具软件来实现延时队列服务</summary></entry></feed>
+&lt;p&gt;PS: 本来要自己实现一下发现有 PHP 版本了，😂，大家可以自己查看上面列出来的 PHP 的实现，一个简单的&lt;a href=&quot;https://github.com/outman/weekly/tree/master/02&quot;&gt;示例代码&lt;/a&gt;。&lt;/p&gt;</content><author><name></name></author><summary type="html">背景</summary></entry></feed>
