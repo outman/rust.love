@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>dom4j DocumentHelper XXE 注入 | Rust.Love</title>
+<meta name="generator" content="Jekyll v3.7.2" />
+<meta property="og:title" content="dom4j DocumentHelper XXE 注入" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="因为之前微信支付的 XXE 注入安全问题，周末帮别人修这个问题，做了一下笔记。因为使用的是 dom4j，所以为了兼容之前的库，做了简单修改。" />
+<meta property="og:description" content="因为之前微信支付的 XXE 注入安全问题，周末帮别人修这个问题，做了一下笔记。因为使用的是 dom4j，所以为了兼容之前的库，做了简单修改。" />
+<link rel="canonical" href="http://rust.love/dom4j/documenthelper/xxe/java/2018/12/29/dom4j-doucument-helper-xxe-inject.html" />
+<meta property="og:url" content="http://rust.love/dom4j/documenthelper/xxe/java/2018/12/29/dom4j-doucument-helper-xxe-inject.html" />
+<meta property="og:site_name" content="Rust.Love" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-12-29T00:00:00+08:00" />
+<script type="application/ld+json">
+{"headline":"dom4j DocumentHelper XXE 注入","dateModified":"2018-12-29T00:00:00+08:00","url":"http://rust.love/dom4j/documenthelper/xxe/java/2018/12/29/dom4j-doucument-helper-xxe-inject.html","datePublished":"2018-12-29T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://rust.love/dom4j/documenthelper/xxe/java/2018/12/29/dom4j-doucument-helper-xxe-inject.html"},"description":"因为之前微信支付的 XXE 注入安全问题，周末帮别人修这个问题，做了一下笔记。因为使用的是 dom4j，所以为了兼容之前的库，做了简单修改。","@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link type="application/atom+xml" rel="alternate" href="http://rust.love/feed.xml" title="Rust.Love" />
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header" role="banner">
+
+  <div class="wrapper">
+    
+    
+    <a class="site-title" rel="author" href="/">Rust.Love</a>
+
+    
+      <nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+              <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+              <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger">
+          
+            
+            
+          
+            
+            
+            <a class="page-link" href="/about/">About</a>
+            
+          
+            
+            
+          
+            
+            
+          
+            
+            
+          
+        </div>
+      </nav>
+    
+  </div>
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">dom4j DocumentHelper XXE 注入</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-12-29T00:00:00+08:00" itemprop="datePublished">
+        
+        Dec 29, 2018
+      </time>
+      </p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>因为之前微信支付的 XXE
+注入安全问题，周末帮别人修这个问题，做了一下笔记。因为使用的是
+dom4j，所以为了兼容之前的库，做了简单修改。</p>
+
+<p>代码中 Section 1 是原始代码，Section 2 是修复后的代码，injectXML 是用于测试的代码，测试代码注入的部分是读取 /etc/hosts 文件，注意 methodname 节点，&amp;xxe 引用，在测试 Section 2 的时候，去除引用。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="kn">import</span> <span class="nn">java.io.StringReader</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.List</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.SortedMap</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.StringTokenizer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.util.TreeMap</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">org.dom4j.Document</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.dom4j.DocumentException</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.dom4j.DocumentHelper</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.dom4j.Element</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.dom4j.io.SAXReader</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.xml.sax.InputSource</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.xml.sax.SAXException</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">XXEInject</span> <span class="o">{</span>
+
+	<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">DocumentException</span> <span class="o">{</span>
+
+		<span class="n">String</span> <span class="n">injectXML</span> <span class="o">=</span> <span class="s">"&lt;?xml version=\"1.0\" encoding=\"utf-8\"?&gt;\n"</span> <span class="o">+</span>
+				<span class="s">"&lt;!DOCTYPE xdsec [\n"</span> <span class="o">+</span>
+				<span class="s">"    &lt;!ELEMENT methodname ANY&gt;\n"</span> <span class="o">+</span>
+				<span class="s">"    &lt;!ENTITY xxe SYSTEM \"file:///etc/hosts\"&gt;\n"</span> <span class="o">+</span>
+				<span class="s">"]&gt;\n"</span> <span class="o">+</span>
+				<span class="s">"&lt;methodcall&gt;\n"</span> <span class="o">+</span>
+				<span class="s">"&lt;methodname&gt;&amp;xxe;&lt;/methodname&gt;\n"</span> <span class="o">+</span>
+				<span class="s">"&lt;/methodcall&gt;"</span><span class="o">;</span>
+
+		<span class="cm">/**
+		 * unsafe
+		 * Section 1
+		 */</span>
+<span class="c1">//		Document document = DocumentHelper.parseText(injectXML);</span>
+		<span class="cm">/**
+		 * Section 1 end
+		 */</span>
+
+		<span class="cm">/**
+		 * safe
+		 * Section 2
+		 */</span>
+		<span class="c1">// 修复 XXE 注入</span>
+		<span class="n">SAXReader</span> <span class="n">reader</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SAXReader</span><span class="o">();</span>
+
+		<span class="k">try</span> <span class="o">{</span>
+			<span class="n">reader</span><span class="o">.</span><span class="na">setFeature</span><span class="o">(</span><span class="s">"http://apache.org/xml/features/disallow-doctype-decl"</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+		<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">SAXException</span> <span class="n">e1</span><span class="o">)</span> <span class="o">{</span>
+			<span class="k">throw</span> <span class="k">new</span> <span class="nf">DocumentException</span><span class="o">(</span><span class="n">e1</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
+		<span class="o">}</span>
+
+		<span class="n">String</span> <span class="n">encoding</span> <span class="o">=</span> <span class="n">getEncoding</span><span class="o">(</span><span class="n">injectXML</span><span class="o">);</span>
+
+		<span class="n">InputSource</span> <span class="n">source</span> <span class="o">=</span> <span class="k">new</span> <span class="n">InputSource</span><span class="o">(</span><span class="k">new</span> <span class="n">StringReader</span><span class="o">(</span><span class="n">injectXML</span><span class="o">));</span>
+		<span class="n">source</span><span class="o">.</span><span class="na">setEncoding</span><span class="o">(</span><span class="n">encoding</span><span class="o">);</span>
+
+		<span class="n">Document</span> <span class="n">document</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">source</span><span class="o">);</span>
+		<span class="cm">/**
+		 * Section 2 end
+		 */</span>
+
+		<span class="n">Element</span> <span class="n">root</span> <span class="o">=</span> <span class="n">document</span><span class="o">.</span><span class="na">getRootElement</span><span class="o">();</span>
+		<span class="n">List</span><span class="o">&lt;</span><span class="n">Element</span><span class="o">&gt;</span> <span class="n">list</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="na">elements</span><span class="o">();</span>
+
+		<span class="n">SortedMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">map</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+		<span class="k">if</span><span class="o">(</span><span class="n">list</span><span class="o">!=</span><span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">list</span><span class="o">.</span><span class="na">size</span><span class="o">()&gt;</span><span class="mi">0</span><span class="o">){</span>
+			<span class="n">map</span> <span class="o">=</span> <span class="k">new</span> <span class="n">TreeMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;();</span>
+			<span class="k">for</span><span class="o">(</span><span class="n">Element</span> <span class="n">e</span> <span class="o">:</span> <span class="n">list</span><span class="o">){</span>
+				<span class="n">String</span> <span class="n">k</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">getName</span><span class="o">();</span>
+				<span class="n">String</span> <span class="n">v</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="na">getText</span><span class="o">();</span>
+				<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">k</span><span class="o">+</span><span class="s">" : "</span><span class="o">+</span><span class="n">v</span><span class="o">);</span>
+				<span class="n">map</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">k</span><span class="o">,</span> <span class="n">v</span><span class="o">);</span>
+			<span class="o">}</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+
+	<span class="cm">/**
+	 * 处理 XXE 注入，方法来自 dom4j
+	 * @param text
+	 * @return String
+	 */</span>
+	<span class="kd">private</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">getEncoding</span><span class="o">(</span><span class="n">String</span> <span class="n">text</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">String</span> <span class="n">result</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+		<span class="n">String</span> <span class="n">xml</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="na">trim</span><span class="o">();</span>
+		<span class="k">if</span> <span class="o">(</span><span class="n">xml</span><span class="o">.</span><span class="na">startsWith</span><span class="o">(</span><span class="s">"&lt;?xml"</span><span class="o">))</span> <span class="o">{</span>
+			<span class="kt">int</span> <span class="n">end</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="na">indexOf</span><span class="o">(</span><span class="s">"?&gt;"</span><span class="o">);</span>
+			<span class="n">String</span> <span class="n">sub</span> <span class="o">=</span> <span class="n">xml</span><span class="o">.</span><span class="na">substring</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">end</span><span class="o">);</span>
+			<span class="n">StringTokenizer</span> <span class="n">tokens</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringTokenizer</span><span class="o">(</span><span class="n">sub</span><span class="o">,</span> <span class="s">" =\"'"</span><span class="o">);</span>
+			<span class="k">while</span> <span class="o">(</span><span class="n">tokens</span><span class="o">.</span><span class="na">hasMoreTokens</span><span class="o">())</span> <span class="o">{</span>
+				<span class="n">String</span> <span class="n">token</span> <span class="o">=</span> <span class="n">tokens</span><span class="o">.</span><span class="na">nextToken</span><span class="o">();</span>
+				<span class="k">if</span> <span class="o">(</span><span class="s">"encoding"</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">token</span><span class="o">))</span> <span class="o">{</span>
+					<span class="k">if</span> <span class="o">(!</span><span class="n">tokens</span><span class="o">.</span><span class="na">hasMoreTokens</span><span class="o">())</span> <span class="o">{</span>
+						<span class="k">break</span><span class="o">;</span>
+					<span class="o">}</span>
+					<span class="n">result</span> <span class="o">=</span> <span class="n">tokens</span><span class="o">.</span><span class="na">nextToken</span><span class="o">();</span>
+					<span class="k">break</span><span class="o">;</span>
+				<span class="o">}</span>
+			<span class="o">}</span>
+		<span class="o">}</span>
+		<span class="k">return</span> <span class="n">result</span><span class="o">;</span>
+
+	<span class="o">}</span>
+
+<span class="o">}</span>
+
+</code></pre></div></div>
+
+  </div>
+
+  
+
+  <a class="u-url" href="/dom4j/documenthelper/xxe/java/2018/12/29/dom4j-doucument-helper-xxe-inject.html" hidden></a>
+</article>
+
+      </div>
+    </main>
+
+    <footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">Rust.Love</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            
+              Rust.Love
+            
+            </li>
+            
+            <li><a class="u-email" href="mailto:pochonleeATgmail.com">pochonleeATgmail.com</a></li>
+            
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+  
+  
+  
+  <li><a href="https://github.com/outman"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#github"></use></svg> <span class="username">outman</span></a></li>
+  
+  
+  
+  <li><a href="https://www.twitter.com/pochonlee"><svg class="svg-icon"><use xlink:href="/assets/minima-social-icons.svg#twitter"></use></svg> <span class="username">pochonlee</span></a></li>
+  
+  
+  
+</ul>
+
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>Freedom &amp; Responsibility.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
